@@ -93,7 +93,7 @@ def gsm8k_plan_execute_example(model_names=["gpt-3.5-turbo", "gpt-3.5-turbo"]):
             [plan, execute],
             model_names=model_names,
             dag_input_names=["<<<MATHEMATICS_QUESTION>>>"],
-            dag_input_aliases={"question": "<<<MATHEMATICS_QUESTION>>>"}, 
+            dag_input_aliases={"question": "<<<MATHEMATICS_QUESTION>>>"},
             dag_output_aliases={"<<<FINAL_ANSWER>>>": "answer"},
         )
     )

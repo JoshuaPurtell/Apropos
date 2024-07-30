@@ -1,8 +1,7 @@
 from bench.base import Question, QABenchmark
 from src.programs.dag import LM_DAG, DagRecord
-from typing import Dict, Tuple, List, Type, Literal
+from typing import Dict, Tuple
 from datasets import load_dataset
-import asyncio
 
 
 def extract_numeric(text: str):
@@ -47,7 +46,7 @@ def standardize_gsm8k_question(hf_dict):
 
 class GSM8k_Question(Question):
     information: Dict
-    
+
     def __init__(self, standardized_information: Dict):
         self.information = standardized_information
 

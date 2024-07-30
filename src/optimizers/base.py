@@ -10,11 +10,17 @@ class DAGOptimizer:
     teacher_program: Optional[LM_DAG]
     dataset_handler: Type[Benchmark]
 
-    async def fsrs_bootstraps(self):
-        pass
-
-    async def bandit_bootstraps(self):
-        pass
+    def get_fewshot_program(
+        self, demonstrations_by_node_name: Dict[str, List[Demonstration]]
+    ):
+        fewshot_program = copy.deepcopy(self.student_program)
+        for node_name, demonstrations_for_stage in demonstrations_by_node_name.items():
+            optimal_demos = demonstrations_for_stage
+            node = fewshot_program.nodes[node_name]
+            node.get_input_fields.prompt.demonstrations = optimal_demos
+            node.transform.prompt.demonstrations = optimal_demos
+            node.produce_stage_record.prompt.demonstrations = optimal_demos
+        return fewshot_program
 
     # Annotator must send DAG to annotated DAG
     async def bootstrap_demonstrations(

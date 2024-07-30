@@ -11,6 +11,11 @@ from src.lms.vendors.openai_ai_api import (
     sync_openai_chat_completion_with_response_model,
     sync_openai_chat_completion,
 )
+from src.lms.vendors.groq_api import (
+    async_groq_chat_completion,
+)
+
+GROQ_MODELS = ["llama3-8b-8192", "llama-3.1-8b-instant"]
 
 
 logger = loguru.logger
@@ -64,6 +69,8 @@ class LLM:
     def route_model_to_provider(self, model_name):
         if "gpt" in model_name:
             return "openai"
+        elif model_name in GROQ_MODELS:
+            return "groq"
         else:
             raise ValueError(f"Model {model_name} not supported")
 
@@ -112,5 +119,16 @@ class LLM:
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                 )
+        elif provider == "groq":
+            if response_model:
+                raise NotImplementedError(
+                    "We haven't added Groq response model support yet"
+                )
+            return await async_groq_chat_completion(
+                messages,
+                self.model_name,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+            )
         else:
             raise ValueError(f"Provider {provider} not supported")
