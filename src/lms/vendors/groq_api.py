@@ -1,101 +1,63 @@
-import asyncio
+from src.lms.vendors.openai_like import OpenAIStandardProvider
+from groq import AsyncGroq, Groq
+import instructor
 import os
-from typing import Dict, List, Optional, Type
-
+import backoff
+import pydantic_core
+from src.lms.cache_init import cache, old_cache
+from src.lms.api_caching_fxns import safecache_wrapper
 import groq
-from groq import AsyncGroq
-from pydantic import BaseModel
 
-from src.lms.caching import (
-    cache,
-    generate_cache_key,
-    generate_cache_key_with_response_model,
-)
+BACKOFF_TOLERANCE = 20
 
-MAX_RETRIES = 1000
-DELAY = 60
-
-client = AsyncGroq(
-    api_key=os.environ.get("GROQ_API_KEY"),
-)
-
-
-def retry_on_ratelimit(
-    max_retries=MAX_RETRIES,
-    delay=DELAY,
-    exceptions=(groq.RateLimitError, groq.APIConnectionError),
-):
-    def decorator(func):
-        async def wrapper(*args, **kwargs):
-            attempts = 0
-            while attempts < max_retries:
-                try:
-                    return await func(*args, **kwargs)
-                except Exception as e:
-                    attempts += 1
-                    if attempts < max_retries:
-                        await asyncio.sleep(delay)
-                    else:
-                        raise Exception
-
-        return wrapper
-
-    return decorator
-
-
-@retry_on_ratelimit(max_retries=MAX_RETRIES, delay=DELAY)
-async def async_groq_chat_completion(
-    messages: list[dict[str, str]],
-    model: str,
-    temperature=0,
-    response_model: Optional[Type[BaseModel]] = None,
-) -> dict[str, str]:
-    if response_model:
-        key = generate_cache_key_with_response_model(
-            messages, model, temperature, response_model
+class GroqAPIProvider(OpenAIStandardProvider):
+    def __init__(self):
+        self.sync_client = instructor.patch(Groq(api_key=os.environ.get("GROQ_API_KEY"),))
+        self.async_client = instructor.patch(AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"),))
+        self.supports_response_model = True
+    
+    @backoff.on_exception(
+            backoff.expo,
+            (groq.RateLimitError, pydantic_core._pydantic_core.ValidationError),
+            max_tries=BACKOFF_TOLERANCE,
+            logger=None,
+            on_giveup=lambda e: print(e) if isinstance(e, pydantic_core._pydantic_core.ValidationError) else None
         )
-        if key in cache:
-            return response_model.parse_raw(cache[key])
-
-        result = await client.chat.completions.create(
-            messages=messages,
+    def sync_chat_completion_with_response_model(self, messages, model, temperature, max_tokens, response_model):
+        if not self.supports_response_model:
+            raise ValueError("Code for this provider does not yet support response models")
+        hit = safecache_wrapper.hit_cache(messages, model, temperature, response_model, cache, old_cache)
+        if hit:
+            return hit
+        output = self.sync_client.chat.completions.create(
             model=model,
-            response_model=response_model,
+            messages=messages,
             temperature=temperature,
+            max_tokens=max_tokens,
+            response_model=response_model
         )
-        cache[key] = result.json()
-        return response_model.parse_raw(cache[key])
+        safecache_wrapper.add_to_cache(messages, model, temperature, response_model, output, cache)
+        return output
 
-    key = generate_cache_key(messages, model, temperature)
-    if key in cache:
-        return cache[key]
-    result = await client.chat.completions.create(
-        messages=messages,
-        model=model,
-        temperature=temperature,
+    @backoff.on_exception(
+        backoff.expo,
+        (groq.RateLimitError, pydantic_core._pydantic_core.ValidationError),
+        max_tries=BACKOFF_TOLERANCE,
+        logger=None,
+        on_giveup=lambda e: print(e) if isinstance(e, pydantic_core._pydantic_core.ValidationError) else None
     )
-    # print("Done")
-    cache[key] = result.choices[0].message.content
-    return result.choices[0].message.content
-
-
-def groq_chat_completion(
-    messages: List[Dict[str, str]],
-    model: str,
-    response_model: Optional[Type[BaseModel]] = None,
-):
-    if response_model:
-        return asyncio.run(
-            async_groq_chat_completion(
-                messages=messages,
-                model=model,
-                response_model=response_model,
-            )
-        )
-
-    return asyncio.run(
-        async_groq_chat_completion(
-            messages=messages,
+    async def async_chat_completion_with_response_model(self, messages, model, temperature, max_tokens, response_model):
+        if not self.supports_response_model:
+            raise ValueError("Code for this provider does not yet support response models")
+        hit = safecache_wrapper.hit_cache(messages, model, temperature,  response_model, cache, old_cache)
+        if hit:
+            return hit
+        output = await self.async_client.chat.completions.create(
             model=model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            response_model=response_model
         )
-    )
+        safecache_wrapper.add_to_cache(messages, model, temperature,  response_model, output, cache)
+        return output
