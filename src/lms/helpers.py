@@ -3,23 +3,17 @@ from datetime import datetime
 from typing import Dict, List, Optional, Type
 
 import loguru
+
 from pydantic import BaseModel
 
-from src.lms.vendors.openai_ai_api import (
-    async_openai_chat_completion,
-    async_openai_chat_completion_with_response_model,
-    sync_openai_chat_completion_with_response_model,
-    sync_openai_chat_completion,
-)
-from src.lms.vendors.groq_api import (
-    async_groq_chat_completion,
-)
+from src.lms.vendors.anthropic_api import AnthropicAPIProvider
+from src.lms.vendors.openai_api import OpenAIAPIProvider
+from src.lms.vendors.groq_api import GroqAPIProvider
+from src.lms.vendors.together_api import TogetherAPIProvider
 
-GROQ_MODELS = ["llama3-8b-8192", "llama-3.1-8b-instant"]
-
+from typing import Dict
 
 logger = loguru.logger
-
 
 def log_backoff(details):
     pass
@@ -31,6 +25,20 @@ def build_messages(sys_msg: str, user_msg: str) -> List[Dict]:
         {"role": "user", "content": user_msg},
     ]
 
+GROQ_MODELS = ["llama3-8b-8192","llama3-70b-8192","llama-3.1-8b-instant","llama-3.1-70b-versatile"]
+TOGETHER_MODELS = ["Qwen/Qwen1.5-4B-Chat","meta-llama/Meta-Llama-3-8B-Instruct-Lite"]
+MODEL_MAP = {
+    "openai": lambda x: "gpt" in x,
+    "groq": lambda x: x in GROQ_MODELS,
+    "claude": lambda x: "claude" in x,
+    "together": lambda x: x in TOGETHER_MODELS
+}
+providers = {
+    "openai": OpenAIAPIProvider,
+    "groq": GroqAPIProvider,
+    "claude": AnthropicAPIProvider,
+    "together": TogetherAPIProvider
+}
 
 class LLM:
     model_name: str
@@ -53,6 +61,10 @@ class LLM:
         self.presence_penalty = presence_penalty
         self.stop = stop
 
+    # def save(self, system_prompt, user_prompt, response_model, response):
+    #     if response_model:
+    #         response = response.dict()
+
     def log_response(self, system_prompt: str, user_prompt: str, response: str):
         log_dir = "logs/llm/bulk"
         if not os.path.exists(log_dir):
@@ -66,13 +78,6 @@ class LLM:
         with open(f"{log_dir}/log_{formatted_now}_{i}.txt", "w") as file:
             file.write(log_content)
 
-    def route_model_to_provider(self, model_name):
-        if "gpt" in model_name:
-            return "openai"
-        elif model_name in GROQ_MODELS:
-            return "groq"
-        else:
-            raise ValueError(f"Model {model_name} not supported")
 
     def sync_respond(
         self,
@@ -81,19 +86,22 @@ class LLM:
         response_model: Optional[Type[BaseModel]] = None,
     ):
         messages = build_messages(system_prompt, user_prompt)
-
-        provider = self.route_model_to_provider(self.model_name)
-        if provider == "openai":
-            if response_model:
-                return sync_openai_chat_completion_with_response_model(
-                    messages, self.model_name, self.temperature, response_model
-                )
-            else:
-                return sync_openai_chat_completion(
-                    messages, self.model_name, self.temperature, self.max_tokens
-                )
+        provider_name = next((k for k, v in MODEL_MAP.items() if v(self.model_name)), None)
+        provider = providers[provider_name]()
+        if response_model:
+            return provider.sync_chat_completion_with_response_model(
+                messages,
+                model=self.model_name,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+            )
         else:
-            raise ValueError(f"Provider {provider} not supported")
+            return provider.sync_chat_completion(
+                messages,
+                model=self.model_name,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+            )
 
     async def async_respond(
         self,
@@ -102,33 +110,20 @@ class LLM:
         response_model: Optional[Type[BaseModel]] = None,
     ):
         messages = build_messages(system_prompt, user_prompt)
-        provider = self.route_model_to_provider(self.model_name)
-        if provider == "openai":
-            if response_model:
-                return await async_openai_chat_completion_with_response_model(
-                    messages,
-                    self.model_name,
-                    temperature=self.temperature,
-                    response_model=response_model,
-                    max_tokens=self.max_tokens,
-                )
-            else:
-                return await async_openai_chat_completion(
-                    messages,
-                    self.model_name,
-                    temperature=self.temperature,
-                    max_tokens=self.max_tokens,
-                )
-        elif provider == "groq":
-            if response_model:
-                raise NotImplementedError(
-                    "We haven't added Groq response model support yet"
-                )
-            return await async_groq_chat_completion(
+        provider_name = next((k for k, v in MODEL_MAP.items() if v(self.model_name)), None)
+        provider = providers[provider_name]()
+        if response_model:
+            return await provider.async_chat_completion_with_response_model(
                 messages,
-                self.model_name,
+                model=self.model_name,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
+                response_model=response_model
             )
         else:
-            raise ValueError(f"Provider {provider} not supported")
+            return await provider.async_chat_completion(
+                messages,
+                model=self.model_name,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens
+            )
