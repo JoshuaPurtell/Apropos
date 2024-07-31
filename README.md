@@ -21,6 +21,7 @@ TBD
 ## Usage
 If you use the following idea(s):
 - Optimizing over variations of specific substrings within a prompt
+
 please cite this repo and forthcoming paper when released
 
 If you use the MIPROv2 optimizer in your academic work, please cite the following [paper](https://arxiv.org/abs/2406.11695):
