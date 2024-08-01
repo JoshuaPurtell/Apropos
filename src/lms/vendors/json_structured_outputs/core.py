@@ -1,12 +1,14 @@
 from typing import Dict, List, Optional, Type, Tuple
 
 import loguru
+from dotenv import load_dotenv
 
 from pydantic import BaseModel
 
 import json
 import json
 from src.lms.vendors.json_structured_outputs.groq_healing import groq_json_debugger
+load_dotenv()
 import ast
 from typing import Dict, get_type_hints
 
@@ -132,7 +134,7 @@ async def extract_pydantic_model_from_response(
             final = response_model(**response)
         except Exception as e:
             logger.warning(
-                f"Groq reformatter Activated"
+                f"Groq debugger Activated"
             )  # Failed to parse response: {response_prepared} - t
             from termcolor import colored
 

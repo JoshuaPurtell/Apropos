@@ -1,5 +1,6 @@
 
 import loguru
+from dotenv import load_dotenv
 
 from pydantic import BaseModel
 from src.lms.vendors.groq_api import GroqAPIProvider
@@ -7,6 +8,7 @@ from src.lms.vendors.groq_api import GroqAPIProvider
 import json
 import traceback
 import json
+load_dotenv()
 
 logger = loguru.logger
 
@@ -52,7 +54,7 @@ Your correction: """
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message},
         ]
-        fixed_json_string_raw = await GroqAPIProvider().async_chat_completion(
+        fixed_json_string_raw = await GroqAPIProvider(use_instructor=True).async_chat_completion(
             messages=messages,
             model="llama3-groq-70b-8192-tool-use-preview",
             temperature=0.0,
