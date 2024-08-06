@@ -5,7 +5,7 @@ import time
 from src.lms.vendors.base import BaseProvider
 from src.lms.vendors.json_structured_outputs.core import add_json_instructions_to_messages, extract_pydantic_model_from_response
 
-BACKOFF_TOLERANCE = 200
+BACKOFF_TOLERANCE = 10
 
 class AnthropicAPIProvider(BaseProvider):
     def __init__(self):

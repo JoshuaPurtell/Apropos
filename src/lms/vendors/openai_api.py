@@ -4,7 +4,8 @@ import pydantic_core
 import backoff
 import openai
 from src.lms.vendors.json_structured_outputs.core import add_json_instructions_to_messages, extract_pydantic_model_from_response
-BACKOFF_TOLERANCE = 100 #20
+
+BACKOFF_TOLERANCE = 15
 
 class OpenAIAPIProvider(OpenAIStandardProvider):
     def __init__(self):
