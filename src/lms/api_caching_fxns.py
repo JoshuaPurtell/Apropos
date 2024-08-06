@@ -13,7 +13,6 @@ import loguru
 from diskcache import Cache
 from pydantic import BaseModel
 import hashlib
-import time
 
 logger = loguru.logger
 
@@ -38,8 +37,8 @@ class SafeCache:
 
     def hit_cache(self, messages, model, temperature, response_model):
         fast_result = self.hit_cache_fast(messages, model, temperature, response_model)
-        if fast_result and isinstance(fast_result, dict):
-            return fast_result["response"]
+        if fast_result:
+            return fast_result
         slow_result = self.hit_cache_slow(messages, model, temperature, response_model)
         if slow_result:
             return slow_result
@@ -47,8 +46,8 @@ class SafeCache:
 
     def hit_cache_fast(self, messages, model, temperature, response_model):
         key = self.get_cache_key(messages, model, temperature, response_model)
-        if key in self.fast_cache:
-            return self.fast_cache[key]
+        if key in self.fast_cache and any([isinstance(self.fast_cache[key]["response"], str), isinstance(self.fast_cache[key]["response"], list), isinstance(self.fast_cache[key]["response"], dict)]):
+            return self.fast_cache[key]["response"] if isinstance(self.fast_cache[key]["response"], str) or isinstance(self.fast_cache[key]["response"], list) else response_model(**self.fast_cache[key]["response"])
         return None
 
     def hit_cache_slow(self, messages, model, temperature, response_model):
@@ -56,7 +55,7 @@ class SafeCache:
         self.cursor.execute("SELECT response FROM cache WHERE key = ?", (key,))
         result = self.cursor.fetchone()
         if result:
-            return json.loads(result[0])
+            return json.loads(result[0]) if isinstance(result[0], str) else response_model(**json.loads(result[0]))
         return None
     
     def hit_cache_brute_force(self, messages, model, temperature, response_model):
@@ -73,7 +72,7 @@ class SafeCache:
             if (info["system"] == target_system and
                 info["user"] == target_user and
                 info["model"] == target_model):
-                return json.loads(response)
+                return json.loads(response) if isinstance(response, str) or isinstance(response, list) else response_model(**json.loads(response))
         return None
     
     def get_cached_features(self, messages: List[Dict], model: str, temperature: float, response_model: Type[BaseModel]):
@@ -88,6 +87,7 @@ class SafeCache:
         key = self.get_cache_key(messages, model, temperature, response_model)
         information = json.dumps(self.get_cached_features(messages, model, temperature, response_model))
 
+        response = response if (isinstance(response, str) or isinstance(response, list)) else response.dict()
         self.fast_cache[key] = {"response": response, "information": information}
         self.cursor.execute("INSERT OR REPLACE INTO cache (key, response, information) VALUES (?, ?, ?)",
                             (key, json.dumps(response), information))

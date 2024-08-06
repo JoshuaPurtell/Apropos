@@ -2,17 +2,12 @@ import backoff
 import openai
 import together
 import groq
-
-#from src.lms.api_caching_fxns_diskcache import safecache_wrapper
-#from src.lms.cache_init_diskcache import cache, old_cache
-#from src.lms.api_caching_fxns_sqlite import #safecache_wrapper
-from src.lms.cache_init import cache#, old_cache
+from src.lms.cache_init import cache
 
 import instructor
-import time
 from src.lms.vendors.base import BaseProvider
 
-BACKOFF_TOLERANCE = 200
+BACKOFF_TOLERANCE = 10
 
 class OpenAIStandardProvider(BaseProvider):
     def __init__(self, sync_client, async_client):
@@ -28,7 +23,6 @@ class OpenAIStandardProvider(BaseProvider):
     def sync_chat_completion_with_response_model(self, messages, model, temperature, max_tokens, response_model):
         if not self.supports_response_model:
             raise ValueError("Code for this provider does not yet support response models")
-        #hit = safecache_wrapper.hit_cache(messages, model, temperature, response_model, cache, old_cache)
         hit = cache.hit_cache(messages, model, temperature, response_model)
         if hit:
             return hit
@@ -40,7 +34,6 @@ class OpenAIStandardProvider(BaseProvider):
             response_model=response_model
         )
         cache.add_to_cache(messages, model, temperature, response_model, output.choices[0].message.content)
-        #safecache_wrapper.add_to_cache(messages, model, temperature, response_model, output.choices[0].message.content, cache)
         return output.choices[0].message.content
 
     @backoff.on_exception(
@@ -51,9 +44,7 @@ class OpenAIStandardProvider(BaseProvider):
     async def async_chat_completion_with_response_model(self, messages, model, temperature, max_tokens, response_model):
         if not self.supports_response_model:
             raise ValueError("Code for this provider does not yet support response models")
-        #hit = safecache_wrapper.hit_cache(messages, model, temperature,  response_model, cache, old_cache)
         hit = cache.hit_cache(messages, model, temperature, response_model)
-        #print("Hit true/false: ",hit is not None)
         if hit:
             return hit
         output = await self.async_client.chat.completions.create(
@@ -63,7 +54,6 @@ class OpenAIStandardProvider(BaseProvider):
             max_tokens=max_tokens,
             response_model=response_model
         )
-        #safecache_wrapper.add_to_cache(messages, model, temperature,  response_model, output.choices[0].message.content, cache)
         cache.add_to_cache(messages, model, temperature, response_model, output.choices[0].message.content)
         return output.choices[0].message.content
     
@@ -73,11 +63,7 @@ class OpenAIStandardProvider(BaseProvider):
         max_tries=BACKOFF_TOLERANCE,
     )
     def sync_chat_completion(self, messages, model, temperature, max_tokens):
-        t0 = time.time()
-        #hit = safecache_wrapper.hit_cache(messages, model, temperature, None, cache, old_cache)
         hit = cache.hit_cache(messages, model, temperature, None)
-        t1 = time.time()
-        print(f"Time taken to hit cache: {t1-t0:.2e} seconds")
         if hit:
             return hit
         output = self.sync_client.chat.completions.create(
@@ -86,7 +72,6 @@ class OpenAIStandardProvider(BaseProvider):
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        #safecache_wrapper.add_to_cache(messages, model, temperature, None, output.choices[0].message.content, cache)
         cache.add_to_cache(messages, model, temperature, None, output.choices[0].message.content)
         return output.choices[0].message.content
     
@@ -96,7 +81,6 @@ class OpenAIStandardProvider(BaseProvider):
         max_tries=BACKOFF_TOLERANCE,
     )
     async def async_chat_completion(self, messages, model, temperature, max_tokens):
-        #hit = safecache_wrapper.hit_cache(messages, model, temperature, None, cache, old_cache)
         hit = cache.hit_cache(messages, model, temperature, None)
         if hit:
             return hit
@@ -106,7 +90,6 @@ class OpenAIStandardProvider(BaseProvider):
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        #safecache_wrapper.add_to_cache(messages, model, temperature, None, output.choices[0].message.content, cache)
         cache.add_to_cache(messages, model, temperature, None, output.choices[0].message.content)
         return output.choices[0].message.content
 

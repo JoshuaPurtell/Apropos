@@ -18,7 +18,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import warnings
 warnings.filterwarnings('ignore')
 
-BACKOFF_TOLERANCE = 200
+BACKOFF_TOLERANCE = 10
 
 class DeepmindAPIProvider(BaseProvider):
     def __init__(self):
