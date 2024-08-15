@@ -3,7 +3,24 @@
 Learning algorithms for production language model programs.
 
 ## Spinning Up - Usage
-TBD
+### Hello World
+To get started with simple bootstrapped fewshot random search on the Hendryks Math benchmark, run:
+```
+python examples/hello_world.py
+```
+
+### Custom Dataset + Prompt
+To get started with a custom dataset and/or language model program, if your program happens to be a single-prompt program, we have a simple demo [here](examples/quick_start.py)
+
+Simply replace
+```
+messages_examples, gold_outputs, custom_math_metric = (
+      get_hendryks_messages_and_gold_outputs()
+)
+```
+with your own data (in the form of system/user prompt pairs and possibly gold outputs) and a metric of your choosing. Then, run away!
+
+Nota Bene: the logic involved in converting this data to the appropriate DAG / benchmark is very new and experimental, please file an issue if you run into any trouble.
 
 ## Spinning Up - Dev
 #### 1. Pyenv

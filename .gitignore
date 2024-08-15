@@ -1,6 +1,7 @@
 .env
 .cache
-.cache.db
+**/*.cache
+**/*.cache.db
 .ruff_cache
 *.png
 *.txt
