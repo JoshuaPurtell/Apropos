@@ -3,6 +3,9 @@
 Learning algorithms for production language model programs.
 
 ## Spinning Up - Usage
+Get started by running
+```pip install apropos-ai```
+
 ### Hello World
 To get started with simple bootstrapped fewshot random search on the Hendryks Math benchmark, run:
 ```
