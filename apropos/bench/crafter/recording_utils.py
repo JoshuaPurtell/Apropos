@@ -4,7 +4,7 @@
 import datetime
 import json
 import pathlib
-
+import imageio
 import numpy as np
 
 
@@ -153,13 +153,16 @@ class EpisodeRecorder:
         return obs, reward, done, info
 
     def _save(self):
-        filename = str(self._directory / (self._env.episode_name + ".npz"))
-        # Fill in zeros for keys missing at the first time step.
-        for key, value in self._episode[1].items():
-            if key not in self._episode[0]:
-                self._episode[0][key] = np.zeros_like(value)
-        episode = {k: np.array([step[k] for step in self._episode]) for k in self._episode[0]}
-        np.savez_compressed(filename, **episode)
+        try:
+            filename = str(self._directory / (self._env.episode_name + ".npz"))
+            # Fill in zeros for keys missing at the first time step.
+            for key, value in self._episode[1].items():
+                if key not in self._episode[0]:
+                    self._episode[0][key] = np.zeros_like(value)
+            episode = {k: np.array([step[k] for step in self._episode]) for k in self._episode[0]}
+            np.savez_compressed(filename, **episode)
+        except Exception as e:
+            print(f"Failed to save episode: {e}")
 
 
 class EpisodeName:
