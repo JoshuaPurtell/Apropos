@@ -10,6 +10,7 @@ from apropos.bench.craftax.game_information import (
     craftax_classic_game_rules,
     craftax_full_action_dict,
     craftax_full_game_rules,
+    craftax_game_tips,
 )
 from apropos.bench.crafter.game_information import (
     crafter_game_tips,
@@ -51,7 +52,7 @@ class SimpleReActLanguageAgent:
             actions = craftax_classic_action_dict
         elif self.mode == "craftax_full":
             rules = craftax_full_game_rules
-            game_tips = crafter_game_tips
+            game_tips = craftax_game_tips
             actions = craftax_full_action_dict
         else:
             raise ValueError(f"Mode {self.mode} not recognized")
@@ -158,7 +159,7 @@ if __name__ == "__main__":
     model_name = "gpt-4o-mini-2024-07-18"
     mode = "craftax_full"
     hafner_score,achievement_probs, total_price = asyncio.run(
-        score_rollouts(k_steps=50, n_rollouts=1, verbose=False, model_name=model_name,modality="text", mode =mode)#hermes-3-llama-3.1-405b-fp8-128k
+        score_rollouts(k_steps=300, n_rollouts=5, verbose=False, model_name=model_name,modality="text", mode =mode)#hermes-3-llama-3.1-405b-fp8-128k
     )
     print("Agent got a normalized Crafter score of", hafner_score)
     print("Achievement Probabilities:")

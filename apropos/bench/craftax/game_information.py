@@ -397,3 +397,22 @@ craftax_full_action_dict =  {
     "level_up_intelligence": 41,
     "enchant_bow": 42,
 }
+craftax_game_tips = [
+    "Explore dungeons, mine resources, craft items, and fight enemies to progress through the game.",
+    "Manage your health, hunger, thirst, energy, and mana to survive. Replenish them by eating, drinking, sleeping, and resting.",
+    "Find and use ladders to descend to the next level after defeating 8 creatures on each floor.",
+    "Start in the Overworld by gathering wood, crafting tools, and preparing for dungeon exploration.",
+    "Craft tables and furnaces to create more advanced tools and weapons.",
+    "Use the bow and arrows for ranged attacks, and craft arrows using wood and stone.",
+    "Assign experience points to upgrade Dexterity, Strength, or Intelligence attributes.",
+    "Experiment with different colored potions to discover their effects, which change each game.",
+    "Use torches in dark levels to navigate and explore safely.",
+    "Craft and wear armor to reduce damage from enemies.",
+    "Learn and use spells for ranged magical attacks, especially against enemies resistant to physical damage.",
+    "Enchant weapons and armor using gemstones and mana for elemental bonuses.",
+    "Mine valuable ores like diamonds, sapphires, and rubies for crafting and enchanting.",
+    "Adapt your strategy for each unique floor, considering the environment and enemy types.",
+    "Build bridges across lava using stone in the Fire Realm.",
+    "Prepare for the absence of food or water on certain levels by stocking up beforehand.",
+    "Defeat the Necromancer in the final Graveyard level by surviving waves of enemies and attacking during vulnerable states."
+]
