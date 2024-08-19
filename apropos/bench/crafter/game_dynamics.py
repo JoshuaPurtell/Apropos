@@ -24,6 +24,20 @@ class StepInfo:
         self.status = status
         self.new_achievements = []
 
+    def visual_readout(self):
+        readout = f"""
+<action_taken>
+{self.prev_action_taken}
+</action_taken>
+"""
+        if self.new_achievements:
+            readout += f"""
+<new_achievements>
+{self.new_achievements}
+</new_achievements>
+"""
+        return readout
+
     def default_readout(self):
         readout = f"""
 <action_taken>
@@ -100,7 +114,6 @@ class CrafterACI:
             "achievements":info["achievements"],
             "reward": reward,
         }
-        #print("Step Info:", step_info["text_obs"][0].default_readout())
         return step_info, reward, done
     
     @abstractmethod
@@ -212,3 +225,19 @@ if __name__ == "__main__":
     k_steps = 10
     filename = "v0"
     asyncio.run(harness(agent, k_steps, filename=filename))
+
+
+#     Actions ['down', 'do']
+# Action enum:  Action.DOWN
+# Entering jdb:
+# (jdb) state_before.player_position
+# Array([32, 32], dtype=int32)
+# (jdb) state.player_position
+# # Array([33, 32], dtype=int32)
+
+# Action enum:  Action.RIGHT
+# Entering jdb:
+# (jdb) state_before.player_position
+# Array([35, 32], dtype=int32)
+# (jdb) state.player_position
+# Array([35, 33], dtype=int32)
