@@ -9,3 +9,9 @@
 
 *.pyc
 *.DS_Store
+
+**/artifacts
+**/artifacts/*
+**/*.mp4
+
+apropos/bench/web_arena/webarena
