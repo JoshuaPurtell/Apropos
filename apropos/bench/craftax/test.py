@@ -123,7 +123,7 @@ def hafner_scoring_function_modified(achievements_probs: Dict):
     return sum([np.log(1 + prob) for prob in probs])
 
 # Log token count to get approx cost of rollout.
-async def score_rollouts(k_steps=10, n_rollouts=10, verbose=False, model_name="gpt-4o-mini", modality: Literal["text","vision"]="text", mode: Literal["craftax_classic","craftax_full"]="craftax_classic"):
+async def score_rollouts(k_steps=10, base_seed=0, n_rollouts=10, verbose=False, model_name="gpt-4o-mini", modality: Literal["text","vision"]="text", mode: Literal["craftax_classic","craftax_full"]="craftax_classic"):
     core_lm = LLM(model_name)
     cost_monitor = CostMonitor(
         model_name=core_lm.model_name
@@ -133,11 +133,11 @@ async def score_rollouts(k_steps=10, n_rollouts=10, verbose=False, model_name="g
     elif modality == "vision":
         raise NotImplementedError("Vision not implemented yet")
     async def single_rollout(seed):
-        try:
-            achievements_log = await harness(agent, seed=seed, k_steps=k_steps, verbose=verbose, mode=mode)
-        except Exception as e:
-            print(f"Error in Rollout: {e}")
-            return
+        #try:
+        achievements_log = await harness(agent, seed=base_seed+seed, k_steps=k_steps, verbose=verbose, mode=mode)
+        # except Exception as e:
+        #     print(f"Error in Rollout: {e}")
+        #     return
         achievements = list({k: v for k, v in achievements_log.items() if v > 0}.keys())
         print("Achievements", achievements)
         action_density = len(agent.obs_history) / len(agent.react_history)
@@ -156,13 +156,87 @@ async def score_rollouts(k_steps=10, n_rollouts=10, verbose=False, model_name="g
 if __name__ == "__main__":
     #gpt-4o-2024-08-06
     #gpt-4o-mini-2024-07-18
-    model_name = "gpt-4o-mini-2024-07-18"
-    mode = "craftax_full"
+    model_name = "ft:gpt-4o-mini-2024-07-18:basis:fbc-full:9yQ7idkM"#"ft:gpt-4o-mini-2024-07-18:basis:fbc-0:9yMCGTnx"
+    mode = "craftax_classic"
     hafner_score,achievement_probs, total_price = asyncio.run(
-        score_rollouts(k_steps=300, n_rollouts=5, verbose=False, model_name=model_name,modality="text", mode =mode)#hermes-3-llama-3.1-405b-fp8-128k
+        score_rollouts(k_steps=300, n_rollouts=5, base_seed=1000, verbose=False, model_name=model_name,modality="text", mode =mode)#hermes-3-llama-3.1-405b-fp8-128k
     )
-    print("Agent got a normalized Crafter score of", hafner_score)
+    print("Agent got a normalized Crafter score of", hafner_score, "on mode: ",mode)
     print("Achievement Probabilities:")
     for k, v in achievement_probs.items():
         print(f"{k}: {v:.3f}")
     print(f"Total price of experiment: ${total_price:.2f}")#TODO: add a way to price images
+
+
+    # gpt-4o-mini-2024-07-18 @ classic - Aug 19, 2024 @ base seed 0
+    # Achievements ['Collect Wood', 'Place Table']
+    # Achievements ['Collect Wood', 'Collect Drink']
+    # Achievements ['Collect Wood', 'Place Table', 'Collect Sapling', 'Make Wood Pickaxe', 'Collect Stone', 'Collect Coal']
+    # Achievements ['Collect Wood', 'Place Table', 'Collect Drink']
+    # Achievements ['Collect Wood', 'Place Table', 'Make Wood Pickaxe', 'Collect Stone', 'Collect Coal']
+    # Agent got a normalized Crafter score of 2.8091443487408707/15.2492
+    # Achievement Probabilities:
+    # Collect Coal: 0.400
+    # Make Wood Pickaxe: 0.400
+    # Collect Stone: 0.400
+    # Collect Sapling: 0.200
+    # Place Table: 0.800
+    # Collect Drink: 0.400
+    # Collect Wood: 1.000
+
+
+    # gpt-4o-mini-2024-07-18 @ classic - Aug 19, 2024 @ base seed 20 5 x 300
+    # ['Collect Wood', 'Place Table', 'Make Wood Pickaxe', 'Collect Stone']
+    # ['Collect Wood', 'Place Table', 'Collect Drink']
+    # ['Collect Wood', 'Place Table', 'Collect Drink', 'Make Wood Pickaxe', 'Collect Stone']
+    # ['Collect Wood', 'Place Table', 'Collect Drink', 'Make Wood Pickaxe']
+    # ['Collect Wood', 'Place Table', 'Eat Cow', 'Make Wood Pickaxe']
+    # Agent got a normalized Crafter score of 2.962878448682913 on mode:  craftax_classic
+    # Achievement Probabilities:
+    # Place Table: 1.000
+    # Collect Stone: 0.400
+    # Eat Cow: 0.200
+    # Collect Wood: 1.000
+    # Collect Drink: 0.600
+    # Make Wood Pickaxe: 0.800
+
+    # ft:gpt-4o-mini-2024-07-18:basis:fbc-0:9yMCGTnx @ classic - Aug 19, 2024 @ base seed 1000 5 x 300
+    # FT on 100 filtered trajectories, 5 steps before reward (600 messages total)
+    # Agent got a normalized Crafter score of 2.9628784486829125 on mode:  craftax_classic
+    # Place Table: 1.000
+    # Collect Wood: 1.000
+    # Make Wood Pickaxe: 0.800
+    # Collect Drink: 0.400
+    # Collect Coal: 0.200
+    # Collect Stone: 0.600
+
+    # ft:gpt-4o-mini-2024-07-18:basis:fbc-full:9yQ7idkM @ classic - Aug 19, 2024 @ base seed 20 5 x 300
+
+    # deepseek-chat @ classic - Aug 19, 2024
+    # Agent got a normalized Crafter score of 2.662545258677573/15.2492
+    # Achievement Probabilities:
+    # Collect Stone: 0.200
+    # Collect Drink: 0.800
+    # Make Stone Pickaxe: 0.200
+    # Wake Up: 0.600
+    # Place Table: 0.200
+    # Collect Wood: 1.000
+    # Make Wood Pickaxe: 0.200
+    # Collect Sapling: 0.200
+
+    # gpt-4o-mini-2024-07-18 @ full - Aug 19, 2024
+    # Agent got a normalized Crafter score of 1.3046503720793805 / 45.747
+    # Achievement Probabilities:
+    # collect_wood: 0.600
+    # place_table: 0.200
+    # collect_drink: 0.600
+    # collect_sapling: 0.200
+
+    # Agent got a normalized Crafter score of 1.6943671232194055
+    # Achievement Probabilities:
+    # collect_sapling: 0.200
+    # collect_drink: 0.400
+    # place_table: 0.800
+    # collect_wood: 0.800
+
+    # flash @ classic - Aug 19, 2024
