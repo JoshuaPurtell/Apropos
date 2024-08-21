@@ -473,6 +473,8 @@ class LM_DAG:
             if edge[1][0] == "DAG_OUTPUT":
                 if list(outputs[edge[0][0]].keys()) in [[""], [""]]:
                     outputs[edge[0][0]][edge[0][1]] = outputs[edge[0][0]][""]
+                elif not edge[0][1] in list(outputs[edge[0][0]].keys()) and edge[0][1] == "answer":
+                    outputs[edge[0][0]]["answer"] = outputs[edge[0][0]]
                 dag_outputs[edge[1][1]] = outputs[edge[0][0]][edge[0][1]]
 
         for k in list(dag_outputs.keys()):
@@ -542,8 +544,10 @@ class LM_DAG:
         dag_outputs = {}
         for edge in self.edges:
             if edge[1][0] == "DAG_OUTPUT":
-                if list(outputs[edge[0][0]].keys()) == [""]:
+                if list(outputs[edge[0][0]].keys()) in [[""], [""]]:
                     outputs[edge[0][0]][edge[0][1]] = outputs[edge[0][0]][""]
+                elif not edge[0][1] in list(outputs[edge[0][0]].keys()) and edge[0][1] == "answer":
+                    outputs[edge[0][0]]["answer"] = outputs[edge[0][0]]
                 dag_outputs[edge[1][1]] = outputs[edge[0][0]][edge[0][1]]
 
         for k in list(
