@@ -337,7 +337,7 @@ async def ground_program_to_single_step_dag(
     input_aliases_to_inputs = await match_aliases_to_prompt_template_inputs(
         input_aliases, prompt_template, ground_llm
     )
-    dag = await build_single_step_program(
+    dag = build_single_step_program(
         prompt_template,
         model_name=program_llm.model_name,
         dag_input_names=[v for k, v in input_aliases_to_inputs.items()],

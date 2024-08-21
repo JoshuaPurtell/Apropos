@@ -137,7 +137,7 @@ def get_runnables_for_llm_based_stage(
     return transform, produce_stage_record, get_input_fields
 
 
-async def build_single_step_program(
+def build_single_step_program(
     prompt: PromptTemplate,
     model_name: str,
     dag_input_names: List[str],
