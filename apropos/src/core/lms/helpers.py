@@ -140,7 +140,7 @@ class LLM:
         images_bytes: List[str] = [],
         response_model: Optional[Type[BaseModel]] = None,
     ):
-        messages = build_messages(system_prompt, user_prompt, images_bytes, self.model_name)
+        messages = build_messages(sys_msg=system_prompt, user_msg=user_prompt, images_bytes=images_bytes, model_name=self.model_name)
         provider_name = next(
             (k for k, v in MODEL_MAP.items() if v(self.model_name)), None
         )
@@ -167,7 +167,7 @@ class LLM:
         images_bytes: List[str] = [],
         response_model: Optional[Type[BaseModel]] = None,
     ):
-        messages = build_messages(system_prompt, user_prompt, images_bytes, self.model_name)
+        messages = build_messages(sys_msg=system_prompt, user_msg=user_prompt, images_bytes=images_bytes, model_name=self.model_name)
         provider_name = next(
             (k for k, v in MODEL_MAP.items() if v(self.model_name)), None
         )
