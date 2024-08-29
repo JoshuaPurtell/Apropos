@@ -47,8 +47,7 @@ def hendryks_math_single_step_example(model_name="gpt-3.5-turbo"):
         response_model_scheme=None,
         demonstrations=[],
     )
-    math_problem_dag = asyncio.run(
-        build_single_step_program(
+    math_problem_dag = build_single_step_program(
             execute,
             model_name=model_name,
             dag_input_names=["<<<MATHEMATICS_QUESTION>>>"],
@@ -57,5 +56,4 @@ def hendryks_math_single_step_example(model_name="gpt-3.5-turbo"):
             },
             dag_output_aliases={"<<<ANSWER>>>": "answer"},
         )
-    )
     return math_problem_dag

@@ -6,6 +6,18 @@ cost_table_by_model = {
         "cost_per_input_token": 1.5e-07,
         "cost_per_output_token": 6e-07,
     },
+    "meta-llama/Meta-Llama-3-8B-Instruct-Lite":{
+        "cost_per_input_token": 1.8e-07,
+        "cost_per_output_token": 1.8e-07,
+    },
+    "gemini-1.5-flash-8b-exp-0827": {
+        "cost_per_input_token": 7.5e-08,
+        "cost_per_output_token": 3e-07,
+    },
+    "gemini-1.5-flash-exp-0827": {
+        "cost_per_input_token": 7.5e-08,
+        "cost_per_output_token": 3e-07,
+    },
     "gemini-1.5-flash": {
         "cost_per_input_token": 7.5e-08,
         "cost_per_output_token": 3e-07,
@@ -24,6 +36,11 @@ cost_table_by_model = {
     {
         "cost_per_input_token": 1.8e-07,
         "cost_per_output_token": 1.8e-07,
+    },
+    "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo":
+    {
+        "cost_per_input_token": 6e-07,
+        "cost_per_output_token": 6e-07,
     },
     "hermes-3-llama-3.1-405b-fp8-128k":{
         "cost_per_input_token": 5e-06,

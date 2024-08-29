@@ -13,7 +13,7 @@ from apropos.src.core.lms.vendors.json_structured_outputs.core import (
     extract_pydantic_model_from_response_sync,
     extract_pydantic_model_from_response_async,
 )
-
+import google.api_core.exceptions
 # Suppress all logging from google.generativeai
 logging.getLogger("google.generativeai").setLevel(logging.ERROR)
 os.environ["GRPC_VERBOSITY"] = "ERROR"
@@ -25,7 +25,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-BACKOFF_TOLERANCE = 1
+BACKOFF_TOLERANCE = 10
 
 
 class DeepmindAPIProvider(BaseProvider):
@@ -34,7 +34,7 @@ class DeepmindAPIProvider(BaseProvider):
 
     @backoff.on_exception(
         backoff.expo,
-        (Exception),  # Replace with specific exceptions if known
+        (Exception, google.api_core.exceptions.ResourceExhausted),  # Replace with specific exceptions if known
         max_tries=BACKOFF_TOLERANCE,
     )
     async def hit_gemini_async(
@@ -53,8 +53,8 @@ class DeepmindAPIProvider(BaseProvider):
         )
         try:
             return result.text
-        except:
-            print("Gemini failed")
+        except Exception as e:
+            print("Gemini failed", e)
             return "Gemini failed"
 
     @backoff.on_exception(
@@ -93,7 +93,7 @@ class DeepmindAPIProvider(BaseProvider):
 
     @backoff.on_exception(
         backoff.expo,
-        (Exception),  # Replace with specific exceptions if known
+        (Exception, google.api_core.exceptions.ResourceExhausted),  # Replace with specific exceptions if known
         max_tries=BACKOFF_TOLERANCE,
     )
     def sync_chat_completion_with_response_model(

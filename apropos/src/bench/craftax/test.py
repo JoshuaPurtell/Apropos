@@ -156,10 +156,11 @@ async def score_rollouts(k_steps=10, base_seed=0, n_rollouts=10, verbose=False, 
 if __name__ == "__main__":
     #gpt-4o-2024-08-06
     #gpt-4o-mini-2024-07-18
-    model_name = "ft:gpt-4o-mini-2024-07-18:basis:fbc-full:9yQ7idkM"#"ft:gpt-4o-mini-2024-07-18:basis:fbc-0:9yMCGTnx"
+    #meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
+    model_name = "gpt-4o-mini-2024-07-18"#"ft:gpt-4o-mini-2024-07-18:basis:fbc-0:9yMCGTnx"
     mode = "craftax_classic"
     hafner_score,achievement_probs, total_price = asyncio.run(
-        score_rollouts(k_steps=300, n_rollouts=5, base_seed=1000, verbose=False, model_name=model_name,modality="text", mode =mode)#hermes-3-llama-3.1-405b-fp8-128k
+        score_rollouts(k_steps=300, n_rollouts=5, base_seed=1000, verbose=False, model_name=model_name,modality="vision", mode =mode)#hermes-3-llama-3.1-405b-fp8-128k
     )
     print("Agent got a normalized Crafter score of", hafner_score, "on mode: ",mode)
     print("Achievement Probabilities:")
@@ -167,6 +168,41 @@ if __name__ == "__main__":
         print(f"{k}: {v:.3f}")
     print(f"Total price of experiment: ${total_price:.2f}")#TODO: add a way to price images
 
+    # Info for FT experiments
+
+
+
+    # claude-3-5-sonnet-20240620 @ classic - Aug 19, 2024 @ base seed 0
+    # Josh note - a bit shocked, it typically does much better than gpt-4o. Going to use discretion and not add to the leaderboard.
+    # Agent got a normalized Crafter score of 3.7285323200296063 on mode:  craftax_classic
+    # Achievement Probabilities:
+    # Make Wood Sword: 0.200
+    # Make Wood Pickaxe: 0.600
+    # Wake Up: 0.600
+    # Collect Coal: 0.400
+    # Collect Stone: 0.400
+    # Place Table: 0.800
+    # Collect Wood: 1.000
+    # Collect Drink: 0.600
+    # Make Stone Pickaxe: 0.200
+
+    # gpt-4o-2024-08-06 @ classic - Aug 19, 2024 @ base seed 0
+    # Achievements ['Collect Wood', 'Place Table', 'Collect Drink', 'Make Wood Pickaxe', 'Make Wood Sword', 'Collect Stone', 'Wake Up', 'Place Furnace', 'Collect Coal']
+    # Achievements ['Collect Wood', 'Place Table', 'Collect Drink', 'Make Wood Sword', 'Wake Up']
+    # Achievements ['Collect Wood', 'Place Table', 'Collect Drink', 'Make Wood Pickaxe', 'Collect Stone', 'Wake Up', 'Place Furnace', 'Collect Coal']
+    # Achievements ['Collect Wood', 'Wake Up']
+    # Achievements ['Collect Wood', 'Place Table', 'Make Wood Pickaxe', 'Make Wood Sword', 'Collect Stone', 'Wake Up']
+    # Agent got a normalized Crafter score of 4.527040016247378/15.2492 on mode:  craftax_classic
+    # Achievement Probabilities:
+    # Collect Coal: 0.400
+    # Collect Wood: 1.000
+    # Make Wood Sword: 0.600
+    # Make Wood Pickaxe: 0.600
+    # Collect Drink: 0.600
+    # Place Furnace: 0.400
+    # Collect Stone: 0.600
+    # Place Table: 0.800
+    # Wake Up: 1.000
 
     # gpt-4o-mini-2024-07-18 @ classic - Aug 19, 2024 @ base seed 0
     # Achievements ['Collect Wood', 'Place Table']
@@ -240,3 +276,10 @@ if __name__ == "__main__":
     # collect_wood: 0.800
 
     # flash @ classic - Aug 19, 2024
+
+    # flash 8b 0.988/ 45.747
+    # 0.6523
+    # Collect Wood: 0.600
+    # Collect Drink: 0.200
+
+    # llama 3 8b 0.77010 / 45.747
