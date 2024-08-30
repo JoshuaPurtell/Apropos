@@ -148,9 +148,9 @@ async def extract_pydantic_model_from_response_async(
             response = ast.literal_eval(response_prepared)
             final = response_model(**response)
         except Exception as e:
-            logger.warning(
-                f"Groq debugger Activated"
-            )  # Failed to parse response: {response_prepared} - t
+            # logger.warning(
+            #     f"Groq debugger Activated"
+            # )  # Failed to parse response: {response_prepared} - t
             from termcolor import colored
 
             #print(colored("* invoking groq formatter *", "yellow"))
@@ -187,9 +187,9 @@ def extract_pydantic_model_from_response_sync(
             response = ast.literal_eval(response_prepared)
             final = response_model(**response)
         except Exception as e:
-            logger.warning(
-                f"Groq debugger Activated"
-            )  # Failed to parse response: {response_prepared} - t
+            # logger.warning(
+            #     f"Groq debugger Activated"
+            # )  # Failed to parse response: {response_prepared} - t
             from termcolor import colored
 
             #print(colored("* invoking groq formatter *", "yellow"))
