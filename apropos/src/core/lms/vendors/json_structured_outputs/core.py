@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, List, Optional, Tuple, Type, Any
 
 import loguru
 
@@ -34,10 +34,12 @@ def add_json_instructions_to_prompt(
             List[float]: "List[float]",
             List[bool]: "List[bool]",
             List[Dict]: "List[Dict]",
+            List[Any]: "List[Any]",
             int: "int",
             float: "float",
             bool: "bool",
             str: "str",
+            Any: "Any",
             Optional[str]: "str",
             Optional[int]: "int",
             Optional[float]: "float",
@@ -49,6 +51,7 @@ def add_json_instructions_to_prompt(
             Dict[int, int]: "Dict[int,int]",
             Dict[int, float]: "Dict[int,float]",
             Dict[int, bool]: "Dict[int,bool]",
+            Dict[str, Any]: "Dict[str,Any]",
         }
 
         for k, v in type_hints.items():
@@ -60,10 +63,12 @@ def add_json_instructions_to_prompt(
             "int": "<Your type-int response here>",
             "float": "<Your type-float response here>",
             "bool": "<Your type-bool response here>",
+            "Any": "<Your response here (infer the type from context)>",
             "List[str]": ["<Your type-str response here>"],
             "List[int]": ["<Your type-int response here>"],
             "List[float]": ["<Your type-float response here>"],
             "List[bool]": ["<Your type-bool response here>"],
+            "List[Any]": ["<Your response here (infer the type from context)>"],
             "List[Dict]": [
                 {"<Your type-str response here>": "<Your type-str response here>"}
             ],
@@ -91,6 +96,9 @@ def add_json_instructions_to_prompt(
             "Dict[int,bool]": {
                 "<Your type-int response here>": "<Your type-bool response here>"
             },
+            "Dict[str,Any]": {
+                "<Your type-str response here>": "<Your response here (infer the type from context)>"
+            },#RISKY!
         }
 
         for key in type_hints:
