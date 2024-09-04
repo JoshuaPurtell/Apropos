@@ -12,7 +12,7 @@ from apropos.src.core.lms.vendors.together_api import TogetherAPIProvider
 from apropos.src.core.lms.vendors.deepmind_api import DeepmindAPIProvider
 from apropos.src.core.lms.vendors.deepseek_api import DeepSeekAPIProvider
 from apropos.src.core.lms.vendors.lambda_api import LambdaAPIProvider
-
+from apropos.src.core.lms.vendors.ollama_api import OllamaAPIProvider
 logger = loguru.logger
 
 
@@ -73,6 +73,7 @@ GROQ_MODELS = [
     "llama-3.1-8b-instant",
     "llama-3.1-70b-versatile",
 ]
+OLLAMA_MODELS = ["gemma2:2b", "gemma2:9b"]
 TOGETHER_MODELS = ["Qwen/Qwen1.5-4B-Chat", "meta-llama/Meta-Llama-3-8B-Instruct-Lite","meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo","meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"]
 MODEL_MAP = {
     "openai": lambda x: "gpt" in x,
@@ -82,6 +83,7 @@ MODEL_MAP = {
     "deepmind": lambda x: "gemini" in x,
     "deepseek": lambda x: "deepseek" in x,
     "lambda": lambda x: "hermes" in x,
+    "ollama": lambda x: x in OLLAMA_MODELS,
 }
 
 providers = {
@@ -92,6 +94,7 @@ providers = {
     "deepmind": DeepmindAPIProvider,
     "deepseek": DeepSeekAPIProvider,
     "lambda": LambdaAPIProvider,
+    "ollama": OllamaAPIProvider,
 }
 
 

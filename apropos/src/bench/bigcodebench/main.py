@@ -1,5 +1,7 @@
 import ast
 import random
+import os
+import pickle
 from typing import Dict, List, Literal, Tuple
 
 from apropos.src.bench.base import QABenchmark, Question
@@ -182,11 +184,22 @@ class BigCodeBench_Question(Question):
 
 class BigCodeBenchComplete_Benchmark(QABenchmark):
     def __init__(self, mode: Literal["local", "remote"] = "remote"):
-        ds = load_dataset("bigcode/bigcodebench", "default")
-        train_test_split = ds["v0.1.0_hf"].train_test_split(test_size=0.5, seed=42)
-        train = [standardize_bcbc_question(q) for q in train_test_split["train"]]
-        test = [standardize_bcbc_question(q) for q in train_test_split["test"]]
-        print("BCB size:", len(train), len(test))
+        cache_dir = "datasets/bigcodebench"
+        cache_file = os.path.join(cache_dir, "cached_questions.pkl")
+
+        if os.path.exists(cache_file):
+            with open(cache_file, "rb") as f:
+                train, test = pickle.load(f)
+        else:
+            ds = load_dataset("bigcode/bigcodebench", "default")
+            train_test_split = ds["v0.1.0_hf"].train_test_split(test_size=0.5, seed=42)
+            train = [standardize_bcbc_question(q) for q in train_test_split["train"]]
+            test = [standardize_bcbc_question(q) for q in train_test_split["test"]]
+
+            os.makedirs(cache_dir, exist_ok=True)
+            with open(cache_file, "wb") as f:
+                pickle.dump((train, test), f)
+
         random.seed(42)
         random.shuffle(train)
         random.shuffle(test)
