@@ -8,6 +8,7 @@ from PIL import Image
 from typing import Optional
 import imageio
 
+
 class StepInfo:
     prev_action_taken: str
     surroundings: Dict[str, str]
@@ -64,19 +65,39 @@ class StepInfo:
 """
         return readout
 
+
 def parse_observations(raw_obs: str) -> List[StepInfo]:
     steps = re.split(r"Player Observation Step \d+:", raw_obs)
     step_infos = []
     for step in steps:
         prev_action_taken = re.search(r"You took action (\w+).", step)
         prev_action_taken = prev_action_taken.group(1) if prev_action_taken else "noop"
-        surroundings = {direction: f"{item} {distance} steps" for item, distance, direction in re.findall(r"- (\w+) (\d+) steps to your (\w+[-\w+]*)", step)}
+        surroundings = {
+            direction: f"{item} {distance} steps"
+            for item, distance, direction in re.findall(
+                r"- (\w+) (\d+) steps to your (\w+[-\w+]*)", step
+            )
+        }
         front = re.search(r"You face (\w+) at your front.", step)
         front = front.group(1) if front else "unknown"
-        status = {status: f"{current}/{max_val}" for status, current, max_val in re.findall(r"- (\w+): (\d+)/(\d+)", step)}
-        inventory = {item: int(count) for item, count in re.findall(r"- (\w+): (\d+)", step) if item not in ["health","food","drink","energy"]} if "You have nothing in your inventory." not in step else {}
-        step_infos.append(StepInfo(prev_action_taken, surroundings, front, inventory, status))
+        status = {
+            status: f"{current}/{max_val}"
+            for status, current, max_val in re.findall(r"- (\w+): (\d+)/(\d+)", step)
+        }
+        inventory = (
+            {
+                item: int(count)
+                for item, count in re.findall(r"- (\w+): (\d+)", step)
+                if item not in ["health", "food", "drink", "energy"]
+            }
+            if "You have nothing in your inventory." not in step
+            else {}
+        )
+        step_infos.append(
+            StepInfo(prev_action_taken, surroundings, front, inventory, status)
+        )
     return step_infos
+
 
 # Agent Computer Interface
 class CrafterACI:
@@ -105,21 +126,21 @@ class CrafterACI:
 
     def render_observations(self, data):
         return parse_observations(data)
-    
+
     def _step(self, action):
         obs, reward, done, info = self.env.step(action)
         step_info = {
             "vis_obs": Image.fromarray(obs).tobytes(),
             "text_obs": self.render_observations(info["obs"]),
-            "achievements":info["achievements"],
+            "achievements": info["achievements"],
             "reward": reward,
         }
         return step_info, reward, done
-    
+
     @abstractmethod
     def step(self, action):
         pass
-    
+
     def _terminate(self):
         self.env.force_save(self.filename)
         self.env.close()
@@ -128,8 +149,8 @@ class CrafterACI:
     def terminate(self):
         pass
 
+
 class StatelessCrafterACI(CrafterACI):
-    
     def multistep(self, actions: List[int]) -> Tuple[List[StepInfo], List[int], bool]:
         done = False
         step_infos = []
@@ -141,14 +162,15 @@ class StatelessCrafterACI(CrafterACI):
             if done:
                 break
         return step_infos, rewards, done
-    
+
     def terminate(self):
         self._terminate()
 
+
 class StatefulCrafterACI(CrafterACI):
     achievements: Dict[str, int]
-    #validate actions, expanded territory, etc
-    #keep track of achieved rewards
+    # validate actions, expanded territory, etc
+    # keep track of achieved rewards
 
     def __init__(self, verbose=False, filename="v0"):
         super().__init__(filename=filename)
@@ -165,7 +187,7 @@ class StatefulCrafterACI(CrafterACI):
         info["text_obs"][0].new_achievements = new_achievements
         self.achievements = info["achievements"]
         return info
-    
+
     def multistep(self, actions: List[int]) -> Tuple[List[StepInfo], List[int], bool]:
         done = False
         step_infos = []
@@ -178,7 +200,7 @@ class StatefulCrafterACI(CrafterACI):
             if done:
                 break
         return step_infos, rewards, done
-    
+
     def terminate(self) -> Dict[str, int]:
         self._terminate()
         return self.achievements
@@ -188,17 +210,20 @@ class StatefulCrafterACI(CrafterACI):
 
     def return_shaped_rewards(self):
         pass
+
     pass
 
-class DummyAgent:
 
+class DummyAgent:
     async def add_observation(self, observations: List[Any]):
         pass
 
     async def get_actions(self):
         import random
+
         return [random.choice(list(action_dict.keys()))]
-    
+
+
 async def harness(agent, k_steps, filename="v0", mode="stateful", verbose=False):
     if mode == "stateless":
         aci = StatelessCrafterACI(filename=filename)
@@ -221,6 +246,7 @@ async def harness(agent, k_steps, filename="v0", mode="stateful", verbose=False)
 
 if __name__ == "__main__":
     import asyncio
+
     agent = DummyAgent()
     k_steps = 10
     filename = "v0"

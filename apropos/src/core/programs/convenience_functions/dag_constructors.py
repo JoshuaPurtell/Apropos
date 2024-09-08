@@ -97,7 +97,13 @@ class Transform(Runnable):
     llm_config: dict
 
     async def arun(self, inputs: Dict[str, Any]):
-        return await llm_transform(inputs, self.prompt, self.llm_config)
+        from pydantic import BaseModel
+
+        result = await llm_transform(inputs, self.prompt, self.llm_config)
+        assert isinstance(result, str) or isinstance(
+            result, BaseModel
+        ), f"Result: {result}"
+        return result
 
     def run(self, inputs: Dict[str, Any]):
         return llm_transform_sync(inputs, self.prompt, self.llm_config)

@@ -240,7 +240,12 @@ class PromptTemplate(BaseModel):
     ):
         system, user = self.compile(inputs, custom_instructions_fields)
         if response_model:
-            response = await lm.async_respond(system_prompt=system, user_prompt=user, response_model=response_model)
+            response = await lm.async_respond(
+                system_prompt=system, user_prompt=user, response_model=response_model
+            )
         else:
             response = await lm.async_respond(system_prompt=system, user_prompt=user)
+        assert isinstance(response, str) or isinstance(
+            response, BaseModel
+        ), f"Response: {response}"
         return response

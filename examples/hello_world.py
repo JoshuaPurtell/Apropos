@@ -1,15 +1,15 @@
 import asyncio
 
-from apropos.bench.base import Benchmark
-from apropos.bench.hendryks_math.dags.plan_execute import (
+from apropos.src.bench.base import Benchmark
+from apropos.src.bench.hendryks_math.dags.plan_execute import (
     hendryks_math_plan_execute_example,
 )
-from apropos.bench.hendryks_math.dags.single_step import (
+from apropos.src.bench.hendryks_math.dags.single_step import (
     hendryks_math_single_step_example,
 )
-from apropos.bench.hendryks_math.main import HendryksMath_Benchmark
-from apropos.src.optimizers.baselines.bffsrs import BreadthFirstRandomSearch_DAG
-from apropos.src.programs.dag import LM_DAG
+from apropos.src.bench.hendryks_math.main import HendryksMath_Benchmark
+from apropos.src.core.optimizers.baselines.bffsrs import BreadthFirstRandomSearch_DAG
+from apropos.src.core.programs.dag import LM_DAG
 
 
 async def main(

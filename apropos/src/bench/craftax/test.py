@@ -13,18 +13,30 @@ def hafner_scoring_function_modified(achievements_probs: Dict):
     probs = list(achievements_probs.values())
     return sum([np.log(1 + prob) for prob in probs])
 
+
 # Log token count to get approx cost of rollout.
-async def score_rollouts(k_steps=10, base_seed=0, n_rollouts=10, verbose=False, model_name="gpt-4o-mini", modality: Literal["text","vision"]="text", mode: Literal["craftax_classic","craftax_full"]="craftax_classic"):
+async def score_rollouts(
+    k_steps=10,
+    base_seed=0,
+    n_rollouts=10,
+    verbose=False,
+    model_name="gpt-4o-mini",
+    modality: Literal["text", "vision"] = "text",
+    mode: Literal["craftax_classic", "craftax_full"] = "craftax_classic",
+):
     core_lm = LLM(model_name)
-    cost_monitor = CostMonitor(
-        model_name=core_lm.model_name
-    )
+    cost_monitor = CostMonitor(model_name=core_lm.model_name)
     if modality == "text":
-        agent = SimpleReActLanguageAgent(lm=core_lm, cost_monitor=cost_monitor, mode=mode)
+        agent = SimpleReActLanguageAgent(
+            lm=core_lm, cost_monitor=cost_monitor, mode=mode
+        )
     elif modality == "vision":
         raise NotImplementedError("Vision not implemented yet")
+
     async def single_rollout(seed):
-        achievements_log = await harness(agent, seed=base_seed+seed, k_steps=k_steps, verbose=verbose, mode=mode)
+        achievements_log = await harness(
+            agent, seed=base_seed + seed, k_steps=k_steps, verbose=verbose, mode=mode
+        )
         achievements = list({k: v for k, v in achievements_log.items() if v > 0}.keys())
         print("Achievements", achievements)
         action_density = len(agent.obs_history) / len(agent.react_history)
@@ -34,26 +46,64 @@ async def score_rollouts(k_steps=10, base_seed=0, n_rollouts=10, verbose=False, 
         if verbose:
             print(f"Rollout price ${price:.2f} for {n_tokens} tokens")
         return achievements, price
-    achivements_and_price_by_rollout = await asyncio.gather(*[single_rollout(seed=_) for _ in range(n_rollouts)])
-    achivements_and_price_by_rollout = [a_and_p for a_and_p in achivements_and_price_by_rollout if a_and_p is not None]
+
+    achivements_and_price_by_rollout = await asyncio.gather(
+        *[single_rollout(seed=_) for _ in range(n_rollouts)]
+    )
+    achivements_and_price_by_rollout = [
+        a_and_p for a_and_p in achivements_and_price_by_rollout if a_and_p is not None
+    ]
     total_price = sum([price for _, price in achivements_and_price_by_rollout])
-    achievements_probs = {k: len([achievements for achievements, _ in achivements_and_price_by_rollout if k in achievements]) / len(achivements_and_price_by_rollout) for k in set([achievement for achievements, _ in achivements_and_price_by_rollout for achievement in achievements])}
-    return hafner_scoring_function_modified(achievements_probs), achievements_probs, total_price
+    achievements_probs = {
+        k: len(
+            [
+                achievements
+                for achievements, _ in achivements_and_price_by_rollout
+                if k in achievements
+            ]
+        )
+        / len(achivements_and_price_by_rollout)
+        for k in set(
+            [
+                achievement
+                for achievements, _ in achivements_and_price_by_rollout
+                for achievement in achievements
+            ]
+        )
+    }
+    return (
+        hafner_scoring_function_modified(achievements_probs),
+        achievements_probs,
+        total_price,
+    )
+
 
 if __name__ == "__main__":
-    #gpt-4o-2024-08-06
-    #gpt-4o-mini-2024-07-18
-    #meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
-    model_name = "gpt-4o-mini-2024-07-18"#"ft:gpt-4o-mini-2024-07-18:basis:fbc-0:9yMCGTnx"
-    mode = "craftax_classic"
-    hafner_score,achievement_probs, total_price = asyncio.run(
-        score_rollouts(k_steps=300, n_rollouts=10, base_seed=1000, verbose=False, model_name=model_name,modality="text", mode =mode)#hermes-3-llama-3.1-405b-fp8-128k
+    # gpt-4o-2024-08-06
+    # gpt-4o-mini-2024-07-18
+    # meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
+    model_name = (
+        "gpt-4o-mini-2024-07-18"  # "ft:gpt-4o-mini-2024-07-18:basis:fbc-0:9yMCGTnx"
     )
-    print("Agent got a normalized Crafter score of", hafner_score, "on mode: ",mode)
+    mode = "craftax_classic"
+    hafner_score, achievement_probs, total_price = asyncio.run(
+        score_rollouts(
+            k_steps=300,
+            n_rollouts=10,
+            base_seed=1000,
+            verbose=False,
+            model_name=model_name,
+            modality="text",
+            mode=mode,
+        )  # hermes-3-llama-3.1-405b-fp8-128k
+    )
+    print("Agent got a normalized Crafter score of", hafner_score, "on mode: ", mode)
     print("Achievement Probabilities:")
     for k, v in achievement_probs.items():
         print(f"{k}: {v:.3f}")
-    print(f"Total price of experiment: ${total_price:.2f}")#TODO: add a way to price images
+    print(
+        f"Total price of experiment: ${total_price:.2f}"
+    )  # TODO: add a way to price images
 
     # Info for FT experiments
     # Agent got a normalized Crafter score of 2.824573777305732 on mode:  craftax_classic
@@ -65,7 +115,6 @@ if __name__ == "__main__":
     # Place Table: 1.000
     # Collect Stone: 0.200
     # Collect Sapling: 0.200
-
 
     # claude-3-5-sonnet-20240620 @ classic - Aug 19, 2024 @ base seed 0
     # Josh note - a bit shocked, it typically does much better than gpt-4o. Going to use discretion and not add to the leaderboard.
@@ -114,7 +163,6 @@ if __name__ == "__main__":
     # Place Table: 0.800
     # Collect Drink: 0.400
     # Collect Wood: 1.000
-
 
     # gpt-4o-mini-2024-07-18 @ classic - Aug 19, 2024 @ base seed 20 5 x 300
     # ['Collect Wood', 'Place Table', 'Make Wood Pickaxe', 'Collect Stone']

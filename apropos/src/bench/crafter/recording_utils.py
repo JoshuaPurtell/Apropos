@@ -9,8 +9,15 @@ import numpy as np
 
 
 class Recorder:
-
-    def __init__(self, env, directory, save_stats=True, save_video=True, save_episode=True, video_size=(512, 512)):
+    def __init__(
+        self,
+        env,
+        directory,
+        save_stats=True,
+        save_video=True,
+        save_episode=True,
+        video_size=(512, 512),
+    ):
         if directory and save_stats:
             env = StatsRecorder(env, directory)
         if directory and save_video:
@@ -35,7 +42,6 @@ class Recorder:
 
 
 class StatsRecorder:
-
     def __init__(self, env, directory):
         self._env = env
         self._directory = pathlib.Path(directory).expanduser()
@@ -76,7 +82,6 @@ class StatsRecorder:
 
 
 class VideoRecorder:
-
     def __init__(self, env, directory, size=(512, 512)):
         if not hasattr(env, "episode_name"):
             env = EpisodeName(env)
@@ -109,7 +114,6 @@ class VideoRecorder:
 
 
 class EpisodeRecorder:
-
     def __init__(self, env, directory):
         if not hasattr(env, "episode_name"):
             env = EpisodeName(env)
@@ -159,14 +163,16 @@ class EpisodeRecorder:
             for key, value in self._episode[1].items():
                 if key not in self._episode[0]:
                     self._episode[0][key] = np.zeros_like(value)
-            episode = {k: np.array([step[k] for step in self._episode]) for k in self._episode[0]}
+            episode = {
+                k: np.array([step[k] for step in self._episode])
+                for k in self._episode[0]
+            }
             np.savez_compressed(filename, **episode)
         except Exception as e:
             print(f"Failed to save episode: {e}")
 
 
 class EpisodeName:
-
     def __init__(self, env):
         self._env = env
         self._timestamp = None

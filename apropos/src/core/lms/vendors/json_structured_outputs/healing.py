@@ -1,15 +1,15 @@
 import json
 import traceback
+from typing import Optional
 
 import loguru
 
 # from dotenv import load_dotenv
 from pydantic import BaseModel
-from typing import Optional
 
 from apropos.src.core.lms.vendors.groq_api import GroqAPIProvider
-
-# load_dotenv()
+from apropos.src.core.lms.vendors.openai_api import OpenAIAPIProvider
+from typing import Literal
 
 logger = loguru.logger
 
@@ -19,9 +19,21 @@ class JsonDebuggerResponse(BaseModel):
     fixed_json_string: str
 
 
-async def groq_json_debugger_async(
-    string_trying_to_be_parsed_as_json: str, response_model: Optional[BaseModel]
+# TODO: add support for local models?
+async def json_debugger_async(
+    string_trying_to_be_parsed_as_json: str,
+    response_model: Optional[BaseModel],
+    provider: Literal["groq", "openai"] = "openai",
 ):
+    print("Running healing")
+    if provider == "groq":
+        provider = GroqAPIProvider(force_structured_output=True)
+        model = "llama3-70b-8192"
+    elif provider == "openai":
+        provider = OpenAIAPIProvider(force_structured_output=True)
+        model = "gpt-4o-mini"
+    else:
+        raise ValueError("Invalid provider")
     succeeded = False
     valid_json = None
     patience = 6
@@ -32,7 +44,7 @@ async def groq_json_debugger_async(
         succeeded = True
         return json.loads(string_trying_to_be_parsed_as_json)
     except:
-        error_log.append("Error in groq_json_debugger: " + traceback.format_exc())
+        error_log.append("Error in healing: " + traceback.format_exc())
         patience -= 1
     while not succeeded:
         response_model_snippet = ""
@@ -63,11 +75,9 @@ Your correction: """
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message},
         ]
-        fixed_json_string_raw = await GroqAPIProvider(
-            use_instructor=True
-        ).async_chat_completion(
+        fixed_json_string_raw = await provider.async_chat_completion(
             messages=messages,
-            model="llama3-70b-8192",
+            model=model,
             temperature=0.0,
             max_tokens=1000,
         )
@@ -103,12 +113,24 @@ Your correction: """
             break
     assert succeeded, "Failed to fix JSON string"
     assert not valid_json is None, "Failed to fix JSON string"
+    print("Valid JSON: ", valid_json)
+    raise ValueError("Failed to fix JSON string")
     return json.loads(valid_json)
 
 
-def groq_json_debugger_sync(
-    string_trying_to_be_parsed_as_json: str, response_model: Optional[BaseModel]
+def json_debugger_sync(
+    string_trying_to_be_parsed_as_json: str,
+    response_model: Optional[BaseModel],
+    provider: Literal["groq", "openai"] = "openai",
 ):
+    if provider == "groq":
+        provider = GroqAPIProvider(force_structured_output=True)
+        model = "llama3-70b-8192"
+    elif provider == "openai":
+        provider = OpenAIAPIProvider(force_structured_output=True)
+        model = "gpt-4o-mini"
+    else:
+        raise ValueError("Invalid provider")
     succeeded = False
     valid_json = None
     patience = 6
@@ -119,7 +141,7 @@ def groq_json_debugger_sync(
         succeeded = True
         return json.loads(string_trying_to_be_parsed_as_json)
     except:
-        error_log.append("Error in groq_json_debugger: " + traceback.format_exc())
+        error_log.append("Error in json_debugger: " + traceback.format_exc())
         patience -= 1
     while not succeeded:
         response_model_snippet = ""
@@ -150,11 +172,9 @@ Your correction: """
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message},
         ]
-        fixed_json_string_raw = GroqAPIProvider(
-            use_instructor=True
-        ).sync_chat_completion(
+        fixed_json_string_raw = provider.sync_chat_completion(
             messages=messages,
-            model="llama3-70b-8192",
+            model=model,
             temperature=0.0,
             max_tokens=1000,
         )
