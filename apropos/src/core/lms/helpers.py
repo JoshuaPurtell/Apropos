@@ -73,8 +73,13 @@ GROQ_MODELS = [
     "llama-3.1-8b-instant",
     "llama-3.1-70b-versatile",
 ]
-OLLAMA_MODELS = ["gemma2:2b", "gemma2:9b"]
-TOGETHER_MODELS = ["Qwen/Qwen1.5-4B-Chat", "meta-llama/Meta-Llama-3-8B-Instruct-Lite","meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo","meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"]
+OLLAMA_MODELS = ["gemma2:2b", "gemma2","gemma2:27b","llama3.1","llama3.1:70b","mistral","llama3.1:405b"]
+TOGETHER_MODELS = [
+    "Qwen/Qwen1.5-4B-Chat",
+    "meta-llama/Meta-Llama-3-8B-Instruct-Lite",
+    "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+]
 MODEL_MAP = {
     "openai": lambda x: "gpt" in x,
     "groq": lambda x: x in GROQ_MODELS,

@@ -153,9 +153,8 @@ async def extract_pydantic_model_from_response_async(
             # )  # Failed to parse response: {response_prepared} - t
             from termcolor import colored
 
-            #print(colored("* invoking groq formatter *", "yellow"))
-            final = await groq_json_debugger_async(
-                response_prepared, response_model=None
+            final = await json_debugger_async(
+                response_prepared, response_model=None, provider_name="openai"
             )
             if final == "ESCALATE":
                 raise ValueError("LLM didn't provide a valid response")
