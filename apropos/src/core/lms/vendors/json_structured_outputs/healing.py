@@ -1,15 +1,15 @@
 import json
 import traceback
+from typing import Optional
 
 import loguru
 
 # from dotenv import load_dotenv
 from pydantic import BaseModel
-from typing import Optional
 
 from apropos.src.core.lms.vendors.groq_api import GroqAPIProvider
-
-# load_dotenv()
+from apropos.src.core.lms.vendors.openai_api import OpenAIAPIProvider
+from typing import Literal
 
 logger = loguru.logger
 
@@ -97,7 +97,7 @@ async def json_debugger_async(
         succeeded = True
         return json.loads(string_trying_to_be_parsed_as_json)
     except:
-        error_log.append("Error in groq_json_debugger: " + traceback.format_exc())
+        error_log.append("Error in healing: " + traceback.format_exc())
         patience -= 1
     while not succeeded:
         messages = get_messages(error_log, string_trying_to_be_parsed_as_json, response_model)

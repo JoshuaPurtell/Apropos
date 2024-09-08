@@ -26,6 +26,10 @@ with your own data (in the form of system/user prompt pairs and possibly gold ou
 Nota Bene: the logic involved in converting this data to the appropriate DAG / benchmark is very new and experimental, please file an issue if you run into any trouble.
 
 ## Spinning Up - Dev
+#### 1. UV
+uv venv apropos-dev
+source apropos-dev/bin/activate
+
 #### 1. Pyenv
    /bash<br>
    `pyenv install 3.11.0`<br>

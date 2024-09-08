@@ -14,6 +14,7 @@ from apropos.src.core.lms.vendors.json_structured_outputs.core import (
     extract_pydantic_model_from_response_async,
 )
 import google.api_core.exceptions
+
 # Suppress all logging from google.generativeai
 logging.getLogger("google.generativeai").setLevel(logging.ERROR)
 os.environ["GRPC_VERBOSITY"] = "ERROR"
@@ -34,7 +35,10 @@ class DeepmindAPIProvider(BaseProvider):
 
     @backoff.on_exception(
         backoff.expo,
-        (Exception, google.api_core.exceptions.ResourceExhausted),  # Replace with specific exceptions if known
+        (
+            Exception,
+            google.api_core.exceptions.ResourceExhausted,
+        ),  # Replace with specific exceptions if known
         max_tries=BACKOFF_TOLERANCE,
     )
     async def hit_gemini_async(
@@ -55,6 +59,7 @@ class DeepmindAPIProvider(BaseProvider):
             return result.text
         except Exception as e:
             print("Gemini failed", e)
+            print(result)
             return "Gemini failed"
 
     @backoff.on_exception(
@@ -93,7 +98,10 @@ class DeepmindAPIProvider(BaseProvider):
 
     @backoff.on_exception(
         backoff.expo,
-        (Exception, google.api_core.exceptions.ResourceExhausted),  # Replace with specific exceptions if known
+        (
+            Exception,
+            google.api_core.exceptions.ResourceExhausted,
+        ),  # Replace with specific exceptions if known
         max_tries=BACKOFF_TOLERANCE,
     )
     def sync_chat_completion_with_response_model(
@@ -168,7 +176,7 @@ if __name__ == "__main__":
     messages = [
         {
             "role": "system",
-            "content": "You  a re a helpful assistant that can answer questions about the capital of France.",
+            "content": "You are a helpful assistant that can answer questions about the capital of France.",
         },
         {"role": "user", "content": " What is t he capital of France? "},
     ]

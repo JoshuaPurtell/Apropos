@@ -9,6 +9,7 @@ from apropos.src.core.lms.vendors.json_structured_outputs.core import (
     extract_pydantic_model_from_response_sync,
     extract_pydantic_model_from_response_async,
 )
+
 BACKOFF_TOLERANCE = 10
 
 
@@ -28,7 +29,7 @@ class LambdaAPIProvider(OpenAIStandardProvider):
 
     @backoff.on_exception(
         backoff.expo,
-        (Exception,openai.InternalServerError),
+        (Exception, openai.InternalServerError),
         max_tries=BACKOFF_TOLERANCE,
         giveup=lambda e: getattr(e, "status_code", None) != 429,
     )
@@ -48,7 +49,7 @@ class LambdaAPIProvider(OpenAIStandardProvider):
 
     @backoff.on_exception(
         backoff.expo,
-        (Exception,openai.InternalServerError),
+        (Exception, openai.InternalServerError),
         max_tries=BACKOFF_TOLERANCE,
         giveup=lambda e: getattr(e, "status_code", None) != 429,
     )

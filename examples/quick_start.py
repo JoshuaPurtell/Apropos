@@ -9,13 +9,13 @@ import asyncio
 
 
 def get_hendryks_messages_and_gold_outputs():
-    from apropos.bench.hendryks_math.main import (
+    from apropos.src.bench.hendryks_math.main import (
         HendryksMath_Benchmark,
         custom_math_metric,
     )
 
     benchmark = HendryksMath_Benchmark()
-    from apropos.bench.hendryks_math.dags.single_step import (
+    from apropos.src.bench.hendryks_math.dags.single_step import (
         hendryks_math_single_step_example,
     )
 

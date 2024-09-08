@@ -6,9 +6,13 @@ import loguru
 # from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from apropos.src.core.lms.vendors.json_structured_outputs.groq_healing import (
-    groq_json_debugger_async,
-    groq_json_debugger_sync,
+# from apropos.src.core.lms.vendors.json_structured_outputs.groq_healing import (
+#     groq_json_debugger_async,
+#     groq_json_debugger_sync,
+# )
+from apropos.src.core.lms.vendors.json_structured_outputs.healing import (
+    json_debugger_async,
+    json_debugger_sync,
 )
 
 # load_dotenv()
@@ -98,7 +102,7 @@ def add_json_instructions_to_prompt(
             },
             "Dict[str,Any]": {
                 "<Your type-str response here>": "<Your response here (infer the type from context)>"
-            },#RISKY!
+            },  # RISKY!
         }
 
         for key in type_hints:
@@ -148,9 +152,6 @@ async def extract_pydantic_model_from_response_async(
             response = ast.literal_eval(response_prepared)
             final = response_model(**response)
         except Exception as e:
-            # logger.warning(
-            #     f"Groq debugger Activated"
-            # )  # Failed to parse response: {response_prepared} - t
             from termcolor import colored
 
             final = await json_debugger_async(
@@ -191,8 +192,10 @@ def extract_pydantic_model_from_response_sync(
             # )  # Failed to parse response: {response_prepared} - t
             from termcolor import colored
 
-            #print(colored("* invoking groq formatter *", "yellow"))
-            final = groq_json_debugger_sync(response_prepared, response_model=None)
+            # print(colored("* invoking groq formatter *", "yellow"))
+            final = json_debugger_sync(
+                response_prepared, response_model=None, provider="openai"
+            )
             if final == "ESCALATE":
                 raise ValueError("LLM didn't provide a valid response")
             try:

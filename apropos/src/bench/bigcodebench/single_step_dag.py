@@ -27,7 +27,7 @@ def code_problem_single_step(model_name="gpt-3.5-turbo"):
             constraints=[
                 Topic(
                     topic_name="Constraints",
-                    topic_template="# Constraints\n Provide your solution as code that can be appended to the provided code signature and executed to solve the problem. Return your code in the following format: \n```python\n<<<YOUR_CODE>>>\n```. Do not re-write the function signature - return code that can be appended to the signature as-is",
+                    topic_template="# Constraints\n Provide your solution as code that can be appended to the provided code signature and executed to solve the problem. Return your code in the following format: \n```python```. Do not re-write the function signature - return code that can be appended to the signature as-is. Keep in mind that your code, and potentially its file outputs, will be tested - do not delete any files it produces.",
                     instructions_fields={},
                     input_fields=[],
                 )
@@ -48,12 +48,12 @@ def code_problem_single_step(model_name="gpt-3.5-turbo"):
         demonstrations=[],
     )
     math_problem_dag = build_single_step_program(
-            execute,
-            model_name=model_name,
-            dag_input_names=["<<<CODING_QUESTION>>>"],
-            dag_input_aliases={
-                "question": "<<<CODING_QUESTION>>>",
-            },
-            dag_output_aliases={"<<<ANSWER>>>": "answer"},
-        )
+        execute,
+        model_name=model_name,
+        dag_input_names=["<<<CODING_QUESTION>>>"],
+        dag_input_aliases={
+            "question": "<<<CODING_QUESTION>>>",
+        },
+        dag_output_aliases={"<<<ANSWER>>>": "answer"},
+    )
     return math_problem_dag
