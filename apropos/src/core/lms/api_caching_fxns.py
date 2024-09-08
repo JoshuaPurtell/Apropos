@@ -37,7 +37,7 @@ class SafeCache:
         temperature: float,
         response_model: Type[BaseModel],
     ):
-        if not all([isinstance(msg["content"],str) for msg in messages]):
+        if not all([isinstance(msg["content"], str) for msg in messages]):
             normalized_messages = "".join([str(msg["content"]) for msg in messages])
         else:
             normalized_messages = "".join([msg["content"] for msg in messages])
@@ -65,7 +65,11 @@ class SafeCache:
             return fast_result
         slow_result = self.hit_cache_slow(messages, model, temperature, response_model)
         if slow_result:
-            return slow_result if not "response" in slow_result else slow_result["response"]
+            return (
+                slow_result
+                if not "response" in slow_result
+                else slow_result["response"]
+            )
         return None
 
     def hit_cache_fast(self, messages, model, temperature, response_model):

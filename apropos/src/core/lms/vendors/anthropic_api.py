@@ -43,7 +43,12 @@ class AnthropicAPIProvider(BaseProvider):
                 if "response" in hit:
                     return response_model(**hit["response"])
                 return response_model(**hit)
-            return hit if not "response" in hit else hit["response"]
+            elif isinstance(hit, str):
+                return hit
+            elif "response" in hit:
+                return hit["response"]
+            else:
+                raise ValueError(f"Hit is neither a dict nor a str: {hit}")
         raw_text_api_response = self.sync_chat_completion(
             messages_with_json_formatting_instructions, model, temperature, max_tokens
         )
@@ -77,18 +82,26 @@ class AnthropicAPIProvider(BaseProvider):
             temperature,
             response_model,
         )
+        print("Hit: ", hit)
         if hit:
             if isinstance(hit, dict) and response_model:
                 if "response" in hit:
                     return response_model(**hit["response"])
                 return response_model(**hit)
-            return hit if not "response" in hit else hit["response"]
+            elif isinstance(hit, str):
+                return hit
+            elif "response" in hit:
+                return hit["response"]
+            else:
+                raise ValueError(f"Hit is neither a dict nor a str: {hit}")
         raw_text_api_response = await self.async_chat_completion(
             messages_with_json_formatting_instructions, model, temperature, max_tokens
         )
         structured_api_response = await extract_pydantic_model_from_response_async(
             raw_text_api_response, response_model
         )
+        print("Raw text API response: ", raw_text_api_response)
+        print("Structured API response: ", structured_api_response)
         cache.add_to_cache(
             messages_with_json_formatting_instructions,
             model,
@@ -110,7 +123,12 @@ class AnthropicAPIProvider(BaseProvider):
         t1 = time.time()
         print(f"Time taken to hit cache: {t1-t0:.2e} seconds")
         if hit:
-            return hit if not "response" in hit else hit["response"]
+            if isinstance(hit, str):
+                return hit
+            elif "response" in hit:
+                return hit["response"]
+            else:
+                raise ValueError(f"Hit is neither a dict nor a str: {hit}")
         system = messages[0]["content"]
         if temperature > 1:
             temperature = 0.999
@@ -134,7 +152,12 @@ class AnthropicAPIProvider(BaseProvider):
     async def async_chat_completion(self, messages, model, temperature, max_tokens):
         hit = cache.hit_cache(messages, model, temperature, None)
         if hit:
-            return hit if not "response" in hit else hit["response"]
+            if isinstance(hit, str):
+                return hit
+            elif "response" in hit:
+                return hit["response"]
+            else:
+                raise ValueError(f"Hit is neither a dict nor a str: {hit}")
         system = messages[0]["content"]
         if temperature > 1:
             temperature = 0.999

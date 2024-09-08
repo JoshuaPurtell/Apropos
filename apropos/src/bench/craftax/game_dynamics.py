@@ -1,11 +1,18 @@
 from typing import Literal
 from craftaxlm import CraftaxACI, CraftaxClassicACI
 
-async def harness(agent, k_steps, seed=0,  verbose=False, mode: Literal["craftax_classic","craftax_full"]="craftax_classic"):
+
+async def harness(
+    agent,
+    k_steps,
+    seed=0,
+    verbose=False,
+    mode: Literal["craftax_classic", "craftax_full"] = "craftax_classic",
+):
     if mode == "craftax_classic":
-        aci = CraftaxClassicACI(seed=seed,verbose=verbose)
+        aci = CraftaxClassicACI(seed=seed, verbose=verbose)
     elif mode == "craftax_full":
-        aci = CraftaxACI(seed=seed,verbose=verbose)
+        aci = CraftaxACI(seed=seed, verbose=verbose)
     else:
         raise ValueError("Invalid Env mode")
     done = False
@@ -19,6 +26,7 @@ async def harness(agent, k_steps, seed=0,  verbose=False, mode: Literal["craftax
             break
     achievements = aci.terminate()
     return achievements
+
 
 if __name__ == "__main__":
     pass

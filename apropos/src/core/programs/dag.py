@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Tuple, Type
 
 import networkx as nx
 from pydantic import BaseModel, create_model
-from regex import D
 
 from apropos.src.core.programs.prompt import Demonstration
 
@@ -150,7 +149,7 @@ class AnnotatedDagRecord(DagRecord):
         include_inputs=True,
         include_outputs=True,
         include_prompt=False,
-    ) -> List[D]:
+    ) -> List[Dict]:
         demonstrations = []
         for stage_record in self.stage_records:
             demonstrations.append(stage_record.to_demonstration())
@@ -452,6 +451,9 @@ class LM_DAG:
             outputs_unstructured = await self.nodes[node_name].arun(
                 inputs=inputs_normalized, verbose=verbose
             )
+            assert isinstance(outputs_unstructured, str) or isinstance(
+                outputs_unstructured, BaseModel
+            ), f"Outputs unstructured: {outputs_unstructured}"
             outputs[node_name] = {}
             if isinstance(outputs_unstructured, str):
                 outputs[node_name][""] = outputs_unstructured
@@ -473,7 +475,10 @@ class LM_DAG:
             if edge[1][0] == "DAG_OUTPUT":
                 if list(outputs[edge[0][0]].keys()) in [[""], [""]]:
                     outputs[edge[0][0]][edge[0][1]] = outputs[edge[0][0]][""]
-                elif not edge[0][1] in list(outputs[edge[0][0]].keys()) and edge[0][1] == "answer":
+                elif (
+                    not edge[0][1] in list(outputs[edge[0][0]].keys())
+                    and edge[0][1] == "answer"
+                ):
                     outputs[edge[0][0]]["answer"] = outputs[edge[0][0]]
                 dag_outputs[edge[1][1]] = outputs[edge[0][0]][edge[0][1]]
 
@@ -526,6 +531,7 @@ class LM_DAG:
                 inputs=inputs_normalized, verbose=verbose
             )  # Assuming run can be synchronous
             outputs[node_name] = {}
+
             if isinstance(outputs_unstructured, str):
                 outputs[node_name][""] = outputs_unstructured
             else:
@@ -546,7 +552,10 @@ class LM_DAG:
             if edge[1][0] == "DAG_OUTPUT":
                 if list(outputs[edge[0][0]].keys()) in [[""], [""]]:
                     outputs[edge[0][0]][edge[0][1]] = outputs[edge[0][0]][""]
-                elif not edge[0][1] in list(outputs[edge[0][0]].keys()) and edge[0][1] == "answer":
+                elif (
+                    not edge[0][1] in list(outputs[edge[0][0]].keys())
+                    and edge[0][1] == "answer"
+                ):
                     outputs[edge[0][0]]["answer"] = outputs[edge[0][0]]
                 dag_outputs[edge[1][1]] = outputs[edge[0][0]][edge[0][1]]
 

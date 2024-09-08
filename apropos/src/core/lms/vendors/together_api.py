@@ -12,6 +12,7 @@ from apropos.src.core.lms.vendors.openai_like import OpenAIStandardProvider
 
 BACKOFF_TOLERANCE = 1  # 20
 
+
 class TogetherAPIProvider(OpenAIStandardProvider):
     def __init__(self):
         self.sync_client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
@@ -20,7 +21,11 @@ class TogetherAPIProvider(OpenAIStandardProvider):
 
     @backoff.on_exception(
         backoff.expo,
-        (together.error.RateLimitError,together.error.APIConnectionError,together.error.APIError),
+        (
+            together.error.RateLimitError,
+            together.error.APIConnectionError,
+            together.error.APIError,
+        ),
         max_tries=BACKOFF_TOLERANCE,
         giveup=lambda e: getattr(e, "status_code", None) != 429,
     )
@@ -41,7 +46,10 @@ class TogetherAPIProvider(OpenAIStandardProvider):
                 if "response" in hit:
                     return response_model(**hit["response"])
                 return response_model(**hit)
-            return hit if not "response" in hit else hit["response"]
+        if hit:
+            if isinstance(hit, dict):
+                return hit.get("response", hit)
+        return hit
         raw_text_api_response = self.sync_chat_completion(
             messages_with_json_formatting_instructions, model, temperature, max_tokens
         )
@@ -59,7 +67,11 @@ class TogetherAPIProvider(OpenAIStandardProvider):
 
     @backoff.on_exception(
         backoff.expo,
-        (together.error.RateLimitError,together.error.APIConnectionError,together.error.APIError),
+        (
+            together.error.RateLimitError,
+            together.error.APIConnectionError,
+            together.error.APIError,
+        ),
         max_tries=BACKOFF_TOLERANCE,
         giveup=lambda e: getattr(e, "status_code", None) != 429,
     )
@@ -80,7 +92,10 @@ class TogetherAPIProvider(OpenAIStandardProvider):
                 if "response" in hit:
                     return response_model(**hit["response"])
                 return response_model(**hit)
-            return hit if not "response" in hit else hit["response"]
+        if hit:
+            if isinstance(hit, dict):
+                return hit.get("response", hit)
+        return hit
         raw_text_api_response = await self.async_chat_completion(
             messages_with_json_formatting_instructions, model, temperature, max_tokens
         )

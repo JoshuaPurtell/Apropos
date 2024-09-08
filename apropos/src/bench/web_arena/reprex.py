@@ -9,33 +9,23 @@ import time
 
 SLEEP = 1.5
 # set the URLs of each website, we use the demo sites as an example
-os.environ[
-    "SHOPPING"
-] = "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:7770"
-os.environ[
-    "SHOPPING_ADMIN"
-] = "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:7780/admin"
-os.environ[
-    "REDDIT"
-] = "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:9999"
-os.environ[
-    "GITLAB"
-] = "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:8023"
-os.environ[
-    "MAP"
-] = "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:3000"
-os.environ[
-    "WIKIPEDIA"
-] = "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing"
-os.environ[
-    "HOMEPAGE"
-] = "PASS"  # The home page is not currently hosted in the demo site
+os.environ["SHOPPING"] = "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:7770"
+os.environ["SHOPPING_ADMIN"] = (
+    "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:7780/admin"
+)
+os.environ["REDDIT"] = "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:9999"
+os.environ["GITLAB"] = "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:8023"
+os.environ["MAP"] = "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:3000"
+os.environ["WIKIPEDIA"] = (
+    "http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing"
+)
+os.environ["HOMEPAGE"] = (
+    "PASS"  # The home page is not currently hosted in the demo site
+)
 print("Done setting up URLs")
 
 # First, run `python scripts/generate_test_data.py` to generate the config files
-p = subprocess.run(
-    ["python", "scripts/generate_test_data.py"], capture_output=True
-)
+p = subprocess.run(["python", "scripts/generate_test_data.py"], capture_output=True)
 
 # It will generate individual config file for each test example in config_files
 config_path = "/Users/jp/Documents/GitHub/Apropos/apropos/bench/web_arena/webarena/config_files/examples/1.json"

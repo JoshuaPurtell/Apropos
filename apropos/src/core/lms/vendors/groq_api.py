@@ -13,8 +13,8 @@ BACKOFF_TOLERANCE = 30
 
 
 class GroqAPIProvider(OpenAIStandardProvider):
-    def __init__(self, use_instructor=False):
-        if use_instructor:
+    def __init__(self, force_structured_output=False):
+        if force_structured_output:
             self.sync_client = instructor.patch(
                 Groq(api_key=os.environ.get("GROQ_API_KEY"))
             )

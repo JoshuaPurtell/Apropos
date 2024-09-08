@@ -6,7 +6,7 @@ cost_table_by_model = {
         "cost_per_input_token": 1.5e-07,
         "cost_per_output_token": 6e-07,
     },
-    "meta-llama/Meta-Llama-3-8B-Instruct-Lite":{
+    "meta-llama/Meta-Llama-3-8B-Instruct-Lite": {
         "cost_per_input_token": 1.8e-07,
         "cost_per_output_token": 1.8e-07,
     },
@@ -22,9 +22,8 @@ cost_table_by_model = {
         "cost_per_input_token": 7.5e-08,
         "cost_per_output_token": 3e-07,
     },
-    "claude-3-haiku-20240307": {
-    },
-    "deepseek-chat":{
+    "claude-3-haiku-20240307": {},
+    "deepseek-chat": {
         "cost_per_input_token": 1.4e-07,
         "cost_per_output_token": 2.8e-07,
     },
@@ -32,17 +31,15 @@ cost_table_by_model = {
         "cost_per_input_token": 5e-08,
         "cost_per_output_token": 8e-08,
     },
-    "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo":
-    {
+    "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo": {
         "cost_per_input_token": 1.8e-07,
         "cost_per_output_token": 1.8e-07,
     },
-    "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo":
-    {
+    "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo": {
         "cost_per_input_token": 6e-07,
         "cost_per_output_token": 6e-07,
     },
-    "hermes-3-llama-3.1-405b-fp8-128k":{
+    "hermes-3-llama-3.1-405b-fp8-128k": {
         "cost_per_input_token": 5e-06,
         "cost_per_output_token": 5e-06,
     },
@@ -50,8 +47,7 @@ cost_table_by_model = {
         "cost_per_input_token": 2.5e-06,
         "cost_per_output_token": 10e-06,
     },
-    "claude-3-5-sonnet-20240620":
-    {
+    "claude-3-5-sonnet-20240620": {
         "cost_per_input_token": 3e-06,
         "cost_per_output_token": 15e-06,
     },
@@ -62,9 +58,9 @@ cost_table_by_model = {
     "claude-3-haiku-20240307": {
         "cost_per_input_token": 2.5e-07,
         "cost_per_output_token": 1.25e-06,
-    }
-
+    },
 }
+
 
 class CostMonitor:
     token_counts: Dict
@@ -73,7 +69,11 @@ class CostMonitor:
 
     def __init__(self, model_name):
         self.token_counts = {"system": 0, "user": 0, "response": 0}
-        self.tokenizer = tiktoken.encoding_for_model(model_name) if "gpt" in model_name else tiktoken.encoding_for_model("gpt-4")
+        self.tokenizer = (
+            tiktoken.encoding_for_model(model_name)
+            if "gpt" in model_name
+            else tiktoken.encoding_for_model("gpt-4")
+        )
         model_name_matches = [k for k in cost_table_by_model.keys() if k in model_name]
         if len(model_name_matches) == 0:
             raise ValueError(f"Model {model_name} not found in cost table")
@@ -91,4 +91,6 @@ class CostMonitor:
         self.token_counts["response"] += len(self.tokenizer.encode(response_message))
 
     def final_cost(self) -> Tuple[float, int]:
-        return sum([self.token_counts[k] * self.pricing[k] for k in self.token_counts]), sum([self.token_counts[k] for k in self.token_counts])
+        return sum(
+            [self.token_counts[k] * self.pricing[k] for k in self.token_counts]
+        ), sum([self.token_counts[k] for k in self.token_counts])

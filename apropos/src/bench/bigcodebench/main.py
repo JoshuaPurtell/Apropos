@@ -7,7 +7,7 @@ from typing import Dict, List, Literal, Tuple
 from apropos.src.bench.base import QABenchmark, Question
 from apropos.src.bench.bigcodebench.backends.danger import execute_code_locally
 from apropos.src.bench.bigcodebench.backends.docker import execute_code_remotely_docker
-from apropos.src.bench.bigcodebench.backends.modal import execute_code_remotely
+from apropos.src.bench.bigcodebench.backends.modal import execute_code_remotely_modal
 from apropos.src.core.programs.dag import LM_DAG, DagRecord
 from datasets import load_dataset
 
@@ -79,7 +79,7 @@ def standardize_bcbc_question(hf_dict: Dict) -> Dict:
 
 
 def composite_code_metric(correctness, result_dict):
-    return correctness
+    return correctness and result_dict["testsRun"] > 0
 
 
 def strip_out_code(answer):
@@ -165,6 +165,7 @@ class BigCodeBench_Question(Question):
         answer = output["answer"]
         answer = strip_out_code(answer)
         if self.mode == "local":
+            raise NotImplementedError("Local mode not safe - use docker or modal")
             correctness, result_dict = execute_code_locally(self.information, answer)
             score = composite_code_metric(correctness, result_dict)
         elif self.mode == "docker":
@@ -173,7 +174,7 @@ class BigCodeBench_Question(Question):
             )
             score = composite_code_metric(correctness, result_dict)
         elif self.mode == "modal":
-            correctness, result_dict = await execute_code_remotely(
+            correctness, result_dict = await execute_code_remotely_modal(
                 self.information, answer
             )
             score = composite_code_metric(correctness, result_dict)
@@ -213,20 +214,48 @@ class BigCodeBenchComplete_Benchmark(QABenchmark):
         self.test = [BigCodeBench_Question(info, mode=mode) for info in test]
 
 
+async def test_gold_on_split(split: str = "train"):
+    bcb = BigCodeBenchComplete_Benchmark(mode="docker")
+    if split == "train":
+        questions = bcb.train
+    elif split == "dev":
+        questions = bcb.dev
+    elif split == "test":
+        questions = bcb.test
+
+    async def score_gold(question: BigCodeBench_Question):
+        answer = question.information["answer"]
+        correctness, result_dict = await execute_code_remotely_docker(
+            question.information, answer
+        )
+        return correctness, result_dict
+
+    gold_scores = await asyncio.gather(
+        *[score_gold(question) for question in questions]
+    )
+    gold_scores = [score for score, _ in gold_scores]
+    import numpy as np
+
+    print(f"Gold scores for {split}: {gold_scores}")
+    print(f"Mean gold score for {split}: {np.mean(gold_scores)}")
+    print(f"Num correct for {split}: {np.sum(gold_scores)}")
+    print(f"Num total for {split}: {len(gold_scores)}")
+
+
 if __name__ == "__main__":
     import asyncio
 
     bcb = BigCodeBenchComplete_Benchmark(mode="docker")
     print("Size of train, dev, test:", len(bcb.train), len(bcb.dev), len(bcb.test))
     from apropos.src.bench.bigcodebench.single_step_dag import code_problem_single_step
+    # asyncio.run(test_gold_on_split(split="train"))
 
-    dag = code_problem_single_step(model_name="gpt-4o-mini")
-    successful_or_not, dag_record = asyncio.run(
-        bcb.train[0].compute_and_score_attempt(dag)
-    )
+    dag = code_problem_single_step(model_name="gemini-1.5-flash-latest")
     import time
+    import numpy as np
 
     t0 = time.time()
-    scores = asyncio.run(bcb.score_dag(dag, n=99, patches=["A", "B"]))
+    scores = asyncio.run(bcb.score_dag(dag, n=100, patches=["A", "B"]))
     t1 = time.time()
     print("Time taken:", t1 - t0)
+    print("Scores:", np.mean(scores))
