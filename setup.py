@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="apropos-ai",
-    version="0.2.0",
+    version="0.3.1",
     packages=find_packages(),
     install_requires=[
         "networkx>=3.3,<4.0",
@@ -17,6 +17,8 @@ setup(
         "datasets>=2.20.0,<3.0",
         "groq>=0.9.0,<1.0",
         "docker>=6.0.0,<7.0",
+        "pytest>=7.4.3,<8.0",
+        "aiodocker>=0.21.0,<0.22.0",
     ],
     author="Josh Purtell",
     author_email="jmvpurtell@gmail.com",
