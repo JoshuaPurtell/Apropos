@@ -41,7 +41,11 @@ async def llm_transform(
 def llm_transform_sync(
     inputs_normalized,
     prompt,
-    llm_config: dict = {"model_name": "gpt-3.5-turbo", "temperature": 0},
+    llm_config: dict = {
+        "model_name": "gpt-3.5-turbo",
+        "temperature": 0,
+        "multi_threaded": False,
+    },
 ):
     if prompt.response_type == "pydantic":
         rm = create_pydantic_model_from_schema(prompt.response_model_scheme)
@@ -50,6 +54,9 @@ def llm_transform_sync(
             lm=LLM(llm_config["model_name"], temperature=llm_config["temperature"]),
             custom_instructions_fields={},
             response_model=rm,
+            multi_threaded=llm_config["multi_threaded"]
+            if "multi_threaded" in llm_config
+            else False,
         )
     else:
         outputs_unstructured = prompt.run(
@@ -57,6 +64,9 @@ def llm_transform_sync(
             lm=LLM(llm_config["model_name"], temperature=llm_config["temperature"]),
             custom_instructions_fields={},
             response_model=None,
+            multi_threaded=llm_config["multi_threaded"]
+            if "multi_threaded" in llm_config
+            else False,
         )
     return outputs_unstructured
 

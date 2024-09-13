@@ -1,6 +1,9 @@
 from apropos.src.core.lms.helpers import LLM
 import numpy as np
-from apropos.src.core.utils.program_grounding import Metric, messages_to_dag_and_benchmark
+from apropos.src.core.utils.program_grounding import (
+    Metric,
+    messages_to_dag_and_benchmark,
+)
 from apropos.src.core.optimizers.baselines.bffsrs import BreadthFirstRandomSearch_DAG
 import asyncio
 

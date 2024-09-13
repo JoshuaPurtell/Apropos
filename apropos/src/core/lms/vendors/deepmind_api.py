@@ -5,7 +5,7 @@ from typing import Dict, List
 
 import backoff
 import google.generativeai as genai
-
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from apropos.src.core.lms.cache_init import cache
 from apropos.src.core.lms.vendors.base import BaseProvider
 from apropos.src.core.lms.vendors.json_structured_outputs.core import (
@@ -30,8 +30,10 @@ BACKOFF_TOLERANCE = 10
 
 
 class DeepmindAPIProvider(BaseProvider):
-    def __init__(self):
+    def __init__(self, multi_threaded: bool = False):
         self.supports_response_model = True
+        if multi_threaded:
+            raise ValueError("Deepmind API does not currently support multi-threading")
 
     @backoff.on_exception(
         backoff.expo,
@@ -53,7 +55,48 @@ class DeepmindAPIProvider(BaseProvider):
             system_instruction=messages[0]["content"],
         )
         result = await code_generation_model.generate_content_async(
-            messages[1]["content"]
+            messages[1]["content"],
+            safety_settings={
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            },
+        )
+        try:
+            return result.text
+        except Exception as e:
+            print("Gemini failed", e)
+            print(result)
+            return "Gemini failed"
+
+    @backoff.on_exception(
+        backoff.expo,
+        (
+            Exception,
+            google.api_core.exceptions.ResourceExhausted,
+        ),  # Replace with specific exceptions if known
+        max_tries=BACKOFF_TOLERANCE,
+    )
+    def hit_gemini_sync(
+        self,
+        messages: List[Dict],
+        temperature: float = 0,
+        model_name: str = "gemini-1.5-flash",
+    ) -> str:
+        code_generation_model = genai.GenerativeModel(
+            model_name=model_name,
+            generation_config={"temperature": temperature},
+            system_instruction=messages[0]["content"],
+        )
+        result = code_generation_model.generate_content(
+            messages[1]["content"],
+            safety_settings={
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            },
         )
         try:
             return result.text
@@ -159,12 +202,10 @@ class DeepmindAPIProvider(BaseProvider):
         hit = cache.hit_cache(messages, model, temperature, None)
         if hit:
             return hit
-        result = asyncio.run(
-            self.hit_gemini_async(
-                messages=messages,
-                model_name=model,
-                temperature=temperature,
-            )
+        result = self.hit_gemini_sync(
+            messages=messages,
+            model_name=model,
+            temperature=temperature,
         )
         cache.add_to_cache(messages, model, temperature, None, result)
         return result
@@ -189,3 +230,10 @@ if __name__ == "__main__":
         )
     )
     print(response)
+    sync_response = DeepmindAPIProvider().sync_chat_completion(
+        messages=messages,
+        model="gemini-1.5-flash",
+        temperature=0.0,
+        max_tokens=150,
+    )
+    print(sync_response)

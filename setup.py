@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="apropos-ai",
-    version="0.1.21",
+    version="0.2.0",
     packages=find_packages(),
     install_requires=[
         "networkx>=3.3,<4.0",

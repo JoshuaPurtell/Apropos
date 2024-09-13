@@ -1,9 +1,10 @@
 import glob
 import os
 
-from apropos.src.core.lms.api_caching_fxns import SafeCache
+from apropos.src.core.lms.api_caching_fxns import SafeCache, ThreadedCache
 
 cache = SafeCache("apropos/src/lms/.cache", "apropos/src/lms/.cache.db")
+threaded_cache = ThreadedCache("apropos/src/lms/.cache")
 
 
 def print_cache_folder_sizes():

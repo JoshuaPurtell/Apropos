@@ -168,6 +168,6 @@ class SyntheticBenchmark(QABenchmark):
             question for question in train[len(train) // 3 : 2 * len(train) // 3]
         ]
         self.test = [question for question in test]
-        print(
-            "Size of train, dev, test:", len(self.train), len(self.dev), len(self.test)
-        )
+        # print(
+        #     "Size of train, dev, test:", len(self.train), len(self.dev), len(self.test)
+        # )
