@@ -17,12 +17,10 @@ class CostMonitor:
         )
         model_name_matches = [k for k in cost_table_by_model.keys() if k in model_name]
         if len(model_name_matches) == 0:
-            print(f"Warning: Model {model_name} not found in cost table. Using default pricing of 0.")
-            self.pricing = {
-                "system": 0,
-                "user": 0,
-                "response": 0
-            }
+            print(
+                f"Warning: Model {model_name} not found in cost table. Using default pricing of 0."
+            )
+            self.pricing = {"system": 0, "user": 0, "response": 0}
 
         else:
             model_name = model_name_matches[0]

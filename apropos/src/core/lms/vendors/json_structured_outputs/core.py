@@ -23,7 +23,10 @@ logger = loguru.logger
 
 
 def add_json_instructions_to_prompt(
-    system_prompt, user_prompt, response_model: Optional[Type[BaseModel]] = None
+    system_prompt,
+    user_prompt,
+    response_model: Optional[Type[BaseModel]] = None,
+    reminder: Optional[str] = None,
 ) -> Tuple[str, str]:
     if response_model:
         dictified = response_model.schema()
@@ -39,6 +42,9 @@ def add_json_instructions_to_prompt(
             List[bool]: "List[bool]",
             List[Dict]: "List[Dict]",
             List[Any]: "List[Any]",
+            List[List[int]]: "List[List[int]]",
+            List[List[str]]: "List[List[str]]",
+            List[Dict[str, str]]: "List[Dict[str,str]]",
             int: "int",
             float: "float",
             bool: "bool",
@@ -56,6 +62,9 @@ def add_json_instructions_to_prompt(
             Dict[int, float]: "Dict[int,float]",
             Dict[int, bool]: "Dict[int,bool]",
             Dict[str, Any]: "Dict[str,Any]",
+            Dict[str, List[str]]: "Dict[str,List[str]]",
+            Dict[str, List[int]]: "Dict[str,List[int]]",
+            Dict[str, Dict[str, List[int]]]: "Dict[str,Dict[str,List[int]]]",
         }
 
         for k, v in type_hints.items():
@@ -73,7 +82,12 @@ def add_json_instructions_to_prompt(
             "List[float]": ["<Your type-float response here>"],
             "List[bool]": ["<Your type-bool response here>"],
             "List[Any]": ["<Your response here (infer the type from context)>"],
+            "List[List[int]]": [["<Your type-int response here>"]],
+            "List[List[str]]": [["<Your type-str response here>"]],
             "List[Dict]": [
+                {"<Your type-str response here>": "<Your type-str response here>"}
+            ],
+            "List[Dict[str,str]]": [
                 {"<Your type-str response here>": "<Your type-str response here>"}
             ],
             "Dict[str,str]": {
@@ -100,9 +114,17 @@ def add_json_instructions_to_prompt(
             "Dict[int,bool]": {
                 "<Your type-int response here>": "<Your type-bool response here>"
             },
+            "Dict[str,List[str]]": {
+                "<Your type-str response here>": ["<Your type-str response here>"]
+            },
             "Dict[str,Any]": {
                 "<Your type-str response here>": "<Your response here (infer the type from context)>"
             },  # RISKY!
+            "Dict[str,Dict[str,List[int]]]": {
+                "<Your type-str response here>": {
+                    "<Your type-str response here>": ["<Your type-int response here>"]
+                }
+            },
         }
 
         for key in type_hints:
@@ -117,16 +139,24 @@ Please deliver your response in the following json format:
 }}
 ```
 """
+    if reminder not in [None, False]:
+        system_prompt += f"""\n\n
+Please take special care to follow the format exactly.
+Keep in mind the following:
+- Always use double quotes for strings
+"""
     return system_prompt, user_prompt
 
 
 def add_json_instructions_to_messages(
-    messages: List[Dict[str, str]], response_model: Optional[Type[BaseModel]] = None
+    messages: List[Dict[str, str]],
+    response_model: Optional[Type[BaseModel]] = None,
+    reminder: Optional[str] = None,
 ) -> List[Dict[str, str]]:
     prev_system_message_content = messages[0]["content"]
     prev_user_message_content = messages[1]["content"]
     system_prompt, user_prompt = add_json_instructions_to_prompt(
-        prev_system_message_content, prev_user_message_content, response_model
+        prev_system_message_content, prev_user_message_content, response_model, reminder
     )
     messages[0]["content"] = system_prompt
     messages[1]["content"] = user_prompt
@@ -140,10 +170,19 @@ async def extract_pydantic_model_from_response_async(
         response_prepared = response_raw.split("```json")[1].split("```")[0].strip()
     elif "```" in response_raw:
         response_prepared = response_raw.split("```")[1].strip()
-    else:
+    elif isinstance(response_raw, str):
         response_prepared = response_raw.strip()
+    else:
+        raise ValueError(f"Invalid response type: {type(response_raw)}")
     # TODO: review???? seems dangerous
     response_prepared = response_prepared.replace("null", '"None"')
+
+    # Do some other standard checks
+    # lines = response_prepared.split("\n")
+    # for i, line in enumerate(lines):
+    #     if "//" in line:
+    #         lines[i] = line.split("//")[0]
+    # response_prepared = "\n".join(lines)
     try:
         response = json.loads(response_prepared)
         final = response_model(**response)
@@ -187,14 +226,10 @@ def extract_pydantic_model_from_response_sync(
             response = ast.literal_eval(response_prepared)
             final = response_model(**response)
         except Exception as e:
-            # logger.warning(
-            #     f"Groq debugger Activated"
-            # )  # Failed to parse response: {response_prepared} - t
             from termcolor import colored
 
-            # print(colored("* invoking groq formatter *", "yellow"))
             final = json_debugger_sync(
-                response_prepared, response_model=None, provider="openai"
+                response_prepared, response_model=None, provider_name="openai"
             )
             if final == "ESCALATE":
                 raise ValueError("LLM didn't provide a valid response")

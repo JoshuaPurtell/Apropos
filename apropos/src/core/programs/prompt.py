@@ -128,7 +128,6 @@ class PromptTemplate(BaseModel):
             for field in topic.input_fields:
                 if field not in template:
                     continue
-
                 template = template.replace(
                     f"{field}", inputs[field] if inputs[field] else ""
                 )
@@ -200,9 +199,15 @@ class PromptTemplate(BaseModel):
             for field in topic.input_fields:
                 if field not in template:
                     continue
-                template = template.replace(
-                    f"{field}", inputs[field] if inputs[field] else ""
-                )
+                try:
+                    template = template.replace(
+                        f"{field}", inputs[field] if inputs[field] else ""
+                    )
+                except TypeError as e:
+                    raise Exception(
+                        f"Inputs must be strings, instead got: {type(inputs[field])} for input field: {field}"
+                    )
+
             for field in topic.instructions_fields:
                 if field not in template:
                     continue
@@ -223,12 +228,20 @@ class PromptTemplate(BaseModel):
         lm: LLM,
         custom_instructions_fields: Dict[str, str] = {},
         response_model: Optional[Any] = None,
+        multi_threaded: bool = False,
     ):
         system, user = self.compile(inputs, custom_instructions_fields)
         if response_model:
-            response = lm.respond(system, user, response_model)
+            response = lm.sync_respond(
+                system_prompt=system,
+                user_prompt=user,
+                response_model=response_model,
+                multi_threaded=multi_threaded,
+            )
         else:
-            response = lm.respond(system, user)
+            response = lm.sync_respond(
+                system_prompt=system, user_prompt=user, multi_threaded=multi_threaded
+            )
         return response
 
     async def arun(

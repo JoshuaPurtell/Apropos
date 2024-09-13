@@ -75,7 +75,15 @@ GROQ_MODELS = [
     "llama-3.1-8b-instant",
     "llama-3.1-70b-versatile",
 ]
-OLLAMA_MODELS = ["gemma2:2b", "gemma2","gemma2:27b","llama3.1","llama3.1:70b","mistral","llama3.1:405b"]
+OLLAMA_MODELS = [
+    "gemma2:2b",
+    "gemma2",
+    "gemma2:27b",
+    "llama3.1",
+    "llama3.1:70b",
+    "mistral",
+    "llama3.1:405b",
+]
 TOGETHER_MODELS = [
     "Qwen/Qwen1.5-4B-Chat",
     "meta-llama/Meta-Llama-3-8B-Instruct-Lite",
@@ -83,7 +91,7 @@ TOGETHER_MODELS = [
     "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
 ]
 MODEL_MAP = {
-    "openai": lambda x: "gpt" in x,
+    "openai": lambda x: "gpt" in x or "o1" in x,
     "groq": lambda x: x in GROQ_MODELS,
     "claude": lambda x: "claude" in x,
     "together": lambda x: x in TOGETHER_MODELS,
@@ -126,10 +134,6 @@ class LLM:
         self.presence_penalty = presence_penalty
         self.stop = stop
 
-    # def save(self, system_prompt, user_prompt, response_model, response):
-    #     if response_model:
-    #         response = response.dict()
-
     def log_response(self, system_prompt: str, user_prompt: str, response: str):
         log_dir = "logs/llm/bulk"
         if not os.path.exists(log_dir):
@@ -149,6 +153,7 @@ class LLM:
         user_prompt: str,
         images_bytes: List[str] = [],
         response_model: Optional[Type[BaseModel]] = None,
+        multi_threaded: bool = False,
     ):
         messages = build_messages(
             sys_msg=system_prompt,
@@ -160,7 +165,7 @@ class LLM:
             (k for k, v in MODEL_MAP.items() if v(self.model_name)), None
         )
         provider = (
-            providers[provider_name]()
+            providers[provider_name](multi_threaded=multi_threaded)
             if provider_name != "groq"
             else providers["groq"](force_structured_output=True)
         )
@@ -170,6 +175,7 @@ class LLM:
                 model=self.model_name,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
+                response_model=response_model,
             )
         else:
             return provider.sync_chat_completion(

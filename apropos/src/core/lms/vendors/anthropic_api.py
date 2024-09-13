@@ -10,15 +10,19 @@ from apropos.src.core.lms.vendors.json_structured_outputs.core import (
     extract_pydantic_model_from_response_sync,
     extract_pydantic_model_from_response_async,
 )
+from pydantic import BaseModel
 
 BACKOFF_TOLERANCE = 200
 
 
 class AnthropicAPIProvider(BaseProvider):
-    def __init__(self):
+    def __init__(self, multi_threaded: bool = False):
         self.sync_client = Anthropic()
         self.async_client = AsyncAnthropic()
         self.supports_response_model = True
+
+        if multi_threaded:
+            raise ValueError("Deepmind API does not currently support multi-threading")
 
     @backoff.on_exception(
         backoff.expo,
@@ -47,6 +51,8 @@ class AnthropicAPIProvider(BaseProvider):
                 return hit
             elif "response" in hit:
                 return hit["response"]
+            elif isinstance(hit, BaseModel):
+                return hit
             else:
                 raise ValueError(f"Hit is neither a dict nor a str: {hit}")
         raw_text_api_response = self.sync_chat_completion(
@@ -82,7 +88,6 @@ class AnthropicAPIProvider(BaseProvider):
             temperature,
             response_model,
         )
-        print("Hit: ", hit)
         if hit:
             if isinstance(hit, dict) and response_model:
                 if "response" in hit:
@@ -92,6 +97,8 @@ class AnthropicAPIProvider(BaseProvider):
                 return hit
             elif "response" in hit:
                 return hit["response"]
+            elif isinstance(hit, BaseModel):
+                return hit
             else:
                 raise ValueError(f"Hit is neither a dict nor a str: {hit}")
         raw_text_api_response = await self.async_chat_completion(
@@ -100,8 +107,6 @@ class AnthropicAPIProvider(BaseProvider):
         structured_api_response = await extract_pydantic_model_from_response_async(
             raw_text_api_response, response_model
         )
-        print("Raw text API response: ", raw_text_api_response)
-        print("Structured API response: ", structured_api_response)
         cache.add_to_cache(
             messages_with_json_formatting_instructions,
             model,
@@ -118,15 +123,14 @@ class AnthropicAPIProvider(BaseProvider):
         giveup=lambda e: getattr(e, "status_code", None) != 429,
     )
     def sync_chat_completion(self, messages, model, temperature, max_tokens):
-        t0 = time.time()
         hit = cache.hit_cache(messages, model, temperature, None)
-        t1 = time.time()
-        print(f"Time taken to hit cache: {t1-t0:.2e} seconds")
         if hit:
             if isinstance(hit, str):
                 return hit
             elif "response" in hit:
                 return hit["response"]
+            elif isinstance(hit, BaseModel):
+                return hit
             else:
                 raise ValueError(f"Hit is neither a dict nor a str: {hit}")
         system = messages[0]["content"]
@@ -156,6 +160,8 @@ class AnthropicAPIProvider(BaseProvider):
                 return hit
             elif "response" in hit:
                 return hit["response"]
+            elif isinstance(hit, BaseModel):
+                return hit
             else:
                 raise ValueError(f"Hit is neither a dict nor a str: {hit}")
         system = messages[0]["content"]

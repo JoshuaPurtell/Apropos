@@ -14,7 +14,7 @@ from apropos.src.core.lms.vendors.openai_like import OpenAIStandardProvider
 
 
 class DeepSeekAPIProvider(OpenAIStandardProvider):
-    def __init__(self):
+    def __init__(self, multi_threaded=False):
         self.sync_client = OpenAI(
             api_key=os.environ.get("DEEPSEEK_API_KEY"),
             base_url="https://api.deepseek.com",
@@ -24,6 +24,9 @@ class DeepSeekAPIProvider(OpenAIStandardProvider):
             base_url="https://api.deepseek.com",
         )
         self.supports_response_model = False
+        super().__init__(
+            self.sync_client, self.async_client, multi_threaded=multi_threaded
+        )
 
     async def async_chat_completion_with_response_model(
         self, messages, model, temperature, max_tokens, response_model

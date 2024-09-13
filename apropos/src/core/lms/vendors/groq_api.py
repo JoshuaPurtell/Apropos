@@ -13,7 +13,7 @@ BACKOFF_TOLERANCE = 30
 
 
 class GroqAPIProvider(OpenAIStandardProvider):
-    def __init__(self, force_structured_output=False):
+    def __init__(self, force_structured_output=False, multi_threaded=False):
         if force_structured_output:
             self.sync_client = instructor.patch(
                 Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -25,6 +25,7 @@ class GroqAPIProvider(OpenAIStandardProvider):
             self.sync_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
             self.async_client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
         self.supports_response_model = True
+        self.multi_threaded = multi_threaded
 
     @backoff.on_exception(
         backoff.expo,
