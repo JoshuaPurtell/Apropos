@@ -1,16 +1,20 @@
 import ast
-import random
 import os
 import pickle
+import random
 from typing import Dict, List, Literal, Tuple
 
 from apropos.src.bench.base import QABenchmark, Question
 from apropos.src.bench.bigcodebench.backends.danger import execute_code_locally
-from apropos.src.bench.bigcodebench.backends.docker import execute_code_remotely_docker
-from apropos.src.bench.bigcodebench.backends.modal import execute_code_remotely_modal
+from apropos.src.bench.bigcodebench.backends.docker import (
+    execute_code_remotely_docker_sync,
+)
+from apropos.src.bench.bigcodebench.backends.modal import (
+    execute_code_remotely_modal_async,
+)
 from apropos.src.core.programs.dag import LM_DAG, DagRecord
 from datasets import load_dataset
-
+import json
 # Connect to modal
 
 
@@ -128,8 +132,8 @@ class BigCodeBench_Question(Question):
             correctness, result_dict = execute_code_locally(self.information, answer)
             score = composite_code_metric(correctness, result_dict)
         elif self.mode == "docker":
-            correctness, result_dict = asyncio.run(
-                execute_code_remotely_docker(self.information, answer)
+            correctness, result_dict, container = execute_code_remotely_docker_sync(
+                self.information, answer
             )
             score = composite_code_metric(correctness, result_dict)
         elif self.mode == "modal":
@@ -169,12 +173,12 @@ class BigCodeBench_Question(Question):
             correctness, result_dict = execute_code_locally(self.information, answer)
             score = composite_code_metric(correctness, result_dict)
         elif self.mode == "docker":
-            correctness, result_dict = await execute_code_remotely_docker(
+            correctness, result_dict, container = execute_code_remotely_docker_sync(
                 self.information, answer
             )
             score = composite_code_metric(correctness, result_dict)
         elif self.mode == "modal":
-            correctness, result_dict = await execute_code_remotely_modal(
+            correctness, result_dict = await execute_code_remotely_modal_async(
                 self.information, answer
             )
             score = composite_code_metric(correctness, result_dict)
@@ -187,10 +191,14 @@ class BigCodeBenchComplete_Benchmark(QABenchmark):
     def __init__(self, mode: Literal["local", "remote"] = "remote"):
         cache_dir = "datasets/bigcodebench"
         cache_file = os.path.join(cache_dir, "cached_questions.pkl")
+        # valid_indices_file = os.path.join(cache_dir, "valid_indices.json")#TODO: make this irrelevant!
 
-        if os.path.exists(cache_file):
+        if os.path.exists(cache_file):  # and os.path.exists(valid_indices_file)
             with open(cache_file, "rb") as f:
                 train, test = pickle.load(f)
+            # with open(valid_indices_file, "rb") as f:
+            #     valid_indices = json.load(f)
+            #     valid_train_indices, valid_test_indices = valid_indices["valid_train_indices"], valid_indices["valid_test_indices"]
         else:
             ds = load_dataset("bigcode/bigcodebench", "default")
             train_test_split = ds["v0.1.0_hf"].train_test_split(test_size=0.5, seed=42)
@@ -200,6 +208,18 @@ class BigCodeBenchComplete_Benchmark(QABenchmark):
             os.makedirs(cache_dir, exist_ok=True)
             with open(cache_file, "wb") as f:
                 pickle.dump((train, test), f)
+
+            # valid_train_indices, valid_test_indices = asyncio.run(self.get_valid_indices(train, test))
+            # with open(valid_indices_file, "w") as f:
+            #     json.dump({
+            #         "valid_train_indices": valid_train_indices,
+            #         "valid_test_indices": valid_test_indices,
+            #     }, f)
+
+        # make redundant ..
+
+        # train = [train[i] for i in valid_train_indices]
+        # test = [test[i] for i in valid_test_indices]
 
         random.seed(42)
         random.shuffle(train)
@@ -213,6 +233,38 @@ class BigCodeBenchComplete_Benchmark(QABenchmark):
         ]
         self.test = [BigCodeBench_Question(info, mode=mode) for info in test]
 
+    async def get_valid_indices(self, train, test) -> Tuple[List[int], List[int]]:
+        train_valid_tasks = [
+            self.check_that_question_is_valid(
+                BigCodeBench_Question(question, mode="modal")
+            )
+            for question in train
+        ]
+        train_valid_judgments = await asyncio.gather(*train_valid_tasks)
+        test_valid_tasks = [
+            self.check_that_question_is_valid(
+                BigCodeBench_Question(question, mode="modal")
+            )
+            for question in test
+        ]
+        test_valid_judgments = await asyncio.gather(*test_valid_tasks)
+        return [i for i, is_valid in enumerate(train_valid_judgments) if is_valid], [
+            i for i, is_valid in enumerate(test_valid_judgments) if is_valid
+        ]
+
+    async def check_that_question_is_valid(self, question: BigCodeBench_Question):
+        answer = question.information["answer"]
+        try:
+            correctness, result_dict = await execute_code_remotely_modal_async(
+                question.information, answer
+            )
+        except Exception as e:
+            print(e)
+            return False
+        if not correctness or result_dict["testsRun"] == 0:
+            return False
+        return True
+
 
 async def test_gold_on_split(split: str = "train"):
     bcb = BigCodeBenchComplete_Benchmark(mode="docker")
@@ -225,7 +277,7 @@ async def test_gold_on_split(split: str = "train"):
 
     async def score_gold(question: BigCodeBench_Question):
         answer = question.information["answer"]
-        correctness, result_dict = await execute_code_remotely_docker(
+        correctness, result_dict, container = execute_code_remotely_docker_sync(
             question.information, answer
         )
         return correctness, result_dict
@@ -246,12 +298,13 @@ if __name__ == "__main__":
     import asyncio
 
     bcb = BigCodeBenchComplete_Benchmark(mode="docker")
-    print("Size of train, dev, test:", len(bcb.train), len(bcb.dev), len(bcb.test))
+    # print("Size of train, dev, test:", len(bcb.train), len(bcb.dev), len(bcb.test))
     from apropos.src.bench.bigcodebench.single_step_dag import code_problem_single_step
     # asyncio.run(test_gold_on_split(split="train"))
 
     dag = code_problem_single_step(model_name="gemini-1.5-flash-latest")
     import time
+
     import numpy as np
 
     t0 = time.time()

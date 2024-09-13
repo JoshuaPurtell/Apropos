@@ -83,6 +83,9 @@ class QABenchmark(Benchmark):
 
         scores, records = [], []
         # Use ThreadPoolExecutor to parallelize the scoring
+        for node in lm_dag.nodes.values():
+            node.transform.llm_config["multi_threaded"] = True
+
         with ThreadPoolExecutor() as executor:
             results = list(
                 executor.map(
