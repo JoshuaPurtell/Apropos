@@ -58,6 +58,27 @@ async def optimize_and_score_program(cfg, dag, benchmark, n_to_score: int = 100)
     print("Optimized program scores:", np.mean(optimized_program_scores))
 
 
+async def main(
+    messages_examples,
+    metric,
+    input_names,
+    name_for_prompt,
+    grounding_llm,
+    program_llm,
+    bffsrs_config,
+):
+    dag, benchmark = await messages_to_dag_and_benchmark(
+        messages_examples,
+        metric,
+        input_names,
+        name_for_prompt,
+        grounding_llm,
+        program_llm,
+    )
+
+    await optimize_and_score_program(bffsrs_config, dag, benchmark)
+
+
 if __name__ == "__main__":
     # REPLACE WITH YOUR OWN DATA
     # messages_examples: List[List[Dict[str, str]]], len N
@@ -70,22 +91,12 @@ if __name__ == "__main__":
     grounding_llm = LLM(
         "claude-3-5-sonnet-20240620"
     )  # For structuring prompts, better to have high-power
-    program_llm = LLM("claude-3-haiku-20240307")  # For generating programs
+    program_llm = LLM("gpt-4o-mini")  # For generating programs
     metric = Metric(
         gold_outputs_for_dataset=gold_outputs, metric_function=custom_math_metric
     )
     input_names = ["question"]
     name_for_prompt = "Solve Math Problem"
-    dag, benchmark = asyncio.run(
-        messages_to_dag_and_benchmark(
-            messages_examples,
-            metric,
-            input_names,
-            name_for_prompt,
-            grounding_llm,
-            program_llm,
-        )
-    )
     bffsrs_config = {
         "optimization": {
             "combination_size": 3,
@@ -100,4 +111,14 @@ if __name__ == "__main__":
         },
         "verbose": True,
     }
-    asyncio.run(optimize_and_score_program(bffsrs_config, dag, benchmark))
+    asyncio.run(
+        main(
+            messages_examples,
+            metric,
+            input_names,
+            name_for_prompt,
+            grounding_llm,
+            program_llm,
+            bffsrs_config,
+        )
+    )

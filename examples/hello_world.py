@@ -88,5 +88,5 @@ if __name__ == "__main__":
     )
     # After 10 iterations
     # Unoptimized Plan-Execute program score: 0.13
-    # Optimized Plan-Execute program score: 0.28
     # Baseline Single-Step program score: 0.24
+    # Optimized Plan-Execute program score: 0.28
