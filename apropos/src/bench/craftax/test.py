@@ -82,14 +82,12 @@ if __name__ == "__main__":
     # gpt-4o-2024-08-06
     # gpt-4o-mini-2024-07-18
     # meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
-    model_name = (
-        "gpt-4o-mini-2024-07-18"  # "ft:gpt-4o-mini-2024-07-18:basis:fbc-0:9yMCGTnx"
-    )
+    model_name = "o1-mini"  # "ft:gpt-4o-mini-2024-07-18:basis:fbc-0:9yMCGTnx"
     mode = "craftax_classic"
     hafner_score, achievement_probs, total_price = asyncio.run(
         score_rollouts(
             k_steps=300,
-            n_rollouts=10,
+            n_rollouts=1,
             base_seed=1000,
             verbose=False,
             model_name=model_name,

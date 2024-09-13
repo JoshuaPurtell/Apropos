@@ -8,8 +8,21 @@ module_to_package_mapping = {
     "sklearn": "scikit-learn",
     "dateutil": "python-dateutil",
     "PIL": "Pillow",
+    "faker": "Faker",
+    "requests_mock": "requests-mock",
 }
-tabu = ["urllib", "urllib.request", "urllib.parse","mpl_toolkits"]
+tabu = [
+    "urllib",
+    "urllib.request",
+    "urllib.parse",
+    "mpl_toolkits",
+    "unittest.mock",
+    "urllib.error",
+    "pyplot",
+    "http.server",
+    "task_func",
+]
+# pyplot and task_func being here is suspicious
 
 
 def get_imports(code: str) -> Tuple[List[str], str]:
@@ -47,6 +60,60 @@ def get_imports(code: str) -> Tuple[List[str], str]:
     return [
         module_to_package_mapping.get(v, v) for v in all_unique_imports if v not in tabu
     ], imports_snippet
+
+
+# pytz
+
+
+def get_linux_import_snippets(full_code: str, imports: List[str]) -> List[str]:
+    opengl = [
+        "apt-get update && apt-get install -y libgl1-mesa-glx",
+        "apt-get update && apt-get install -y libglib2.0-0",
+    ]
+    gcc = ["apt-get update && apt-get install -y gcc"]
+    wordcloud = ["apt-get install -y python3-dev libfreetype6-dev libpng-dev"]
+    fonts = [
+        "apt-get update && apt-get install -y fontconfig",
+        "mkdir -p ~/.fonts",
+        "wget https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Regular.ttf -O ~/.fonts/Roboto-Regular.ttf",
+        "fc-cache -f -v",
+    ]
+    fonts = []  # might not be necessary?
+    stopwords = [
+        "pip install --no-cache-dir nltk",
+        "python -c 'import nltk; nltk.download(\"stopwords\")'",
+    ]
+    linux_imports = []
+    opengl_packages = ["Pillow", "opencv-python"]
+    gcc_packages = [
+        "numpy",
+        "scipy",
+        "pandas",
+        "matplotlib",
+        "cython",
+        "torch",
+        "tensorflow",
+        "scikit-learn",
+        "nltk",
+        "Pillow",
+        "opencv-python",
+        "psycopg2",
+        "mysqlclient",
+        "lxml",
+        "biopython",
+    ]
+    for import_ in imports:
+        if import_ in opengl_packages:  # cv2, PIL
+            linux_imports.extend(opengl)
+        if import_ in gcc_packages:
+            linux_imports.extend(gcc)
+    if "stopwords.words" in full_code:
+        linux_imports.extend(stopwords)
+    if "='Arial'" in full_code:
+        linux_imports.extend(fonts)
+    if "wordcloud" in full_code:
+        linux_imports.extend(wordcloud)
+    return linux_imports
 
 
 def test_get_imports():
@@ -94,16 +161,8 @@ def test_get_imports():
 
     for code, expected_output in test_cases:
         packages, imports_snippet = get_imports(code)
-        if sorted(expected_output[0]) != sorted(
-            packages
-        ):  # or imports_snippet != expected_output[1]
+        if sorted(expected_output[0]) != sorted(packages):
             failures += 1
-            print(f"Test case failed:")
-            print(f"Input: {code}")
-            print(f"Expected packages: {expected_output[0]}, got: {packages}")
-            print(f"Expected imports snippet: {expected_output[1]}")
-            print(f"Got imports snippet: {imports_snippet}")
-            print()
         else:
             successes += 1
 

@@ -149,9 +149,9 @@ class HendryksMath_Benchmark(QABenchmark):
         ]
         self.test = [MATH_Question(info) for info in test]
 
-        print(
-            "Size of train, dev, test:", len(self.train), len(self.dev), len(self.test)
-        )
+        # print(
+        #     "Size of train, dev, test:", len(self.train), len(self.dev), len(self.test)
+        # )
 
 
 if __name__ == "__main__":
