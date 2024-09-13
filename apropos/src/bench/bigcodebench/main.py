@@ -15,6 +15,7 @@ from apropos.src.bench.bigcodebench.backends.modal import (
 from apropos.src.core.programs.dag import LM_DAG, DagRecord
 from datasets import load_dataset
 import json
+import asyncio
 # Connect to modal
 
 
@@ -98,12 +99,12 @@ def strip_out_code(answer):
 class BigCodeBench_Question(Question):
     information: Dict
     correctness: bool
-    mode: Literal["local", "modal", "docker"] = "local"
+    mode: Literal["modal", "docker"] = "docker"
 
     def __init__(
         self,
         standardized_information: Dict,
-        mode: Literal["local", "modal", "docker"] = "docker",
+        mode: Literal["modal", "docker"] = "docker",
     ):
         self.information = standardized_information
         self.correctness = None
@@ -129,6 +130,7 @@ class BigCodeBench_Question(Question):
         answer = output["answer"]
         answer = strip_out_code(answer)
         if self.mode == "local":
+            raise NotImplementedError("Local mode not safe - use docker or modal")
             correctness, result_dict = execute_code_locally(self.information, answer)
             score = composite_code_metric(correctness, result_dict)
         elif self.mode == "docker":
@@ -138,7 +140,7 @@ class BigCodeBench_Question(Question):
             score = composite_code_metric(correctness, result_dict)
         elif self.mode == "modal":
             correctness, result_dict = asyncio.run(
-                execute_code_remotely(self.information, answer)
+                execute_code_remotely_modal_async(self.information, answer)
             )
             score = composite_code_metric(correctness, result_dict)
         else:
@@ -188,7 +190,7 @@ class BigCodeBench_Question(Question):
 
 
 class BigCodeBenchComplete_Benchmark(QABenchmark):
-    def __init__(self, mode: Literal["local", "remote"] = "remote"):
+    def __init__(self, mode: Literal["docker","modal"] = "docker"):#"local", "remote"
         cache_dir = "datasets/bigcodebench"
         cache_file = os.path.join(cache_dir, "cached_questions.pkl")
         # valid_indices_file = os.path.join(cache_dir, "valid_indices.json")#TODO: make this irrelevant!
@@ -299,7 +301,7 @@ if __name__ == "__main__":
 
     bcb = BigCodeBenchComplete_Benchmark(mode="docker")
     # print("Size of train, dev, test:", len(bcb.train), len(bcb.dev), len(bcb.test))
-    from apropos.src.bench.bigcodebench.single_step_dag import code_problem_single_step
+    from apropos.src.bench.bigcodebench.dags.single_step_dag import code_problem_single_step
     # asyncio.run(test_gold_on_split(split="train"))
 
     dag = code_problem_single_step(model_name="gemini-1.5-flash-latest")
@@ -308,7 +310,7 @@ if __name__ == "__main__":
     import numpy as np
 
     t0 = time.time()
-    scores = asyncio.run(bcb.score_dag(dag, n=100, patches=["A", "B"]))
+    scores = asyncio.run(bcb.score_dag(dag, n=10, patches=["A", "B"]))
     t1 = time.time()
     print("Time taken:", t1 - t0)
     print("Scores:", np.mean(scores))
